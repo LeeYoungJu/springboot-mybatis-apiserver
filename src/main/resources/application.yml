@@ -36,7 +36,7 @@ spring:
     access-key: enjoyworks
     secret-key: enjoyworks1!
   thymeleaf:
-    prefix: classpath:/mail/templates/
+    prefix: classpath:/templates/
     suffix: .html
     mode: HTML
     encoding: UTF-8

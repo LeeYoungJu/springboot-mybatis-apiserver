@@ -7,6 +7,7 @@
         select *
         from users
         where auth_id=#{authId}
+          and deleted_at is null
     </select>
 
     <select id="findId" resultType="hashMap">
@@ -29,7 +30,7 @@
     </select>
 
     <update id="updatePassword">
-        update users set password = #{password}
+        update users set password = #{password}, updated_at = now()
         where id = #{userId}
     </update>
 

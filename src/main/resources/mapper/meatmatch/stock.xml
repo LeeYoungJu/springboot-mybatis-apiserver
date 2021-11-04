@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.meatmatch.mapper.meatmatch.StockMapper">
+    <select id="selectPartList" resultType="hashMap">
+        select distinct stock_part.id, stock_part.part, stock_product.stock_kind_id
+        from stock_product
+        join stock_part on stock_product.stock_part_id = stock_part.id
+        where stock_product.stock_category_id = #{stockCategoryId}
+          and stock_product.stock_kind_id = #{stockKindId}
+          and stock_part.deleted_at is null
+        order by part
+    </select>
+
+    <select id="selectOriginList" resultType="hashMap">
+        select distinct stock_origin.id, stock_origin.origin
+        from stock_product
+        join stock_origin on stock_product.stock_origin_id = stock_origin.id
+        where stock_product.stock_category_id = #{stockCategoryId}
+          and stock_product.stock_kind_id = #{stockKindId}
+          and stock_product.stock_part_id = #{stockPartId}
+          and stock_origin.deleted_at is null
+        order by origin
+    </select>
+
+    <select id="selectBrandList" resultType="hashMap">
+        select distinct stock_brand.id, stock_brand.brand
+        from stock_product
+        join stock_brand on stock_brand.id = stock_product.stock_brand_id
+        where stock_product.stock_category_id = #{stockCategoryId}
+          and stock_product.stock_kind_id = #{stockKindId}
+          and stock_product.stock_part_id = #{stockPartId}
+          and stock_product.stock_origin_id = #{stockOriginId}
+          and stock_brand.deleted_at is null
+        order by stock_brand.brand
+    </select>
+
+    <select id="selectEstList" resultType="hashMap">
+        select distinct stock_est.id, stock_est.est_no
+        from stock_product
+        join stock_est on stock_est.id = stock_product.stock_est_id
+        where stock_product.stock_category_id = #{stockCategoryId}
+          and stock_product.stock_kind_id = #{stockKindId}
+          and stock_product.stock_part_id = #{stockPartId}
+          and stock_product.stock_origin_id = #{stockOriginId}
+          and stock_product.stock_brand_id = #{stockBrandId}
+          and stock_est.deleted_at is null
+        order by stock_est.est_no
+    </select>
+
+    <select id="selectGradeList" resultType="hashMap">
+        select distinct distinct stock_grade.id, stock_grade.grade
+        from stock_product
+        join stock_grade on stock_grade.id = stock_product.stock_grade_id
+        where stock_product.stock_category_id = #{stockCategoryId}
+          and stock_product.stock_kind_id = #{stockKindId}
+          and stock_product.stock_part_id = #{stockPartId}
+          and stock_product.stock_origin_id = #{stockOriginId}
+          and stock_product.stock_brand_id = #{stockBrandId}
+          and stock_product.stock_est_id = #{stockEstId}
+          and stock_grade.deleted_at is null
+        order by stock_grade.grade
+    </select>
+</mapper>

@@ -37,6 +37,14 @@ public class AuthService {
     private final MinioFileService minioFileService;
     private final SmsService smsService;
 
+    public String getMyAuthId() throws Exception {
+        return jwtUtil.extractUsername(jwtUtil.JWT);
+    }
+
+    public HashMap<String, Object> getMyUserObj() throws Exception {
+        return authMapper.findUserByAuthId(this.getMyAuthId());
+    }
+
     public HashMap<String, Object> login(String authId, String password) throws Exception {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authId, password)

@@ -5,11 +5,11 @@ import lombok.Getter;
 
 @Getter
 public class ResponseStatusObject extends ResponseStatus {
-    private String code;
+    private int code;
     private Object msg;
 
     @Builder
-    public ResponseStatusObject(String code, Object msg) {
+    public ResponseStatusObject(int code, Object msg) {
         this.code = code;
         this.msg = msg;
     }

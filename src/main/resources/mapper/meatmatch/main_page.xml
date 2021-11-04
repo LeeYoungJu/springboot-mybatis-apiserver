@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.meatmatch.mapper.meatmatch.MainPageMapper">
+
+    <select id="selectOrdersBooks" resultType="hashMap">
+
+        select obk.stock_product_id as id
+             , sc.category, sk.kind, spt.part, so.origin
+             , sb.brand, se.est_no, sg.grade
+             , min(obk.price) price
+        from orders_book as obk
+        join stock_product AS sp on obk.stock_product_id = sp.id
+        join stock_category AS sc on sp.stock_category_id = sc.id
+        join stock_kind AS sk on sp.stock_kind_id = sk.id
+        join stock_part AS spt on sp.stock_part_id = spt.id
+        join stock_origin AS so on sp.stock_origin_id = so.id
+        join stock_brand AS sb on sp.stock_brand_id = sb.id
+        join stock_est AS se on sp.stock_est_id = se.id
+        join stock_grade AS sg on sp.stock_grade_id = sg.id
+        left join stock_keep AS skp on sp.stock_keep_id = skp.id
+        where obk.status = 'order'
+          and obk.type = #{type}
+          and sp.stock_kind_id = #{stock_kind_id}
+          and obk.deleted_at is null
+        <if test='stock_part_id != null and !stock_part_id.equals("")'>
+          and sp.stock_part_id = #{stock_part_id}
+        </if>
+        <if test='stock_origin_id != null and !stock_origin_id.equals("")'>
+            and sp.stock_origin_id = #{stock_origin_id}
+        </if>
+        <if test='stock_brand_id != null and !stock_brand_id.equals("")'>
+            and sp.stock_brand_id = #{stock_brand_id}
+        </if>
+        <if test='stock_est_id != null and !stock_est_id.equals("")'>
+            and sp.stock_est_id = #{stock_est_id}
+        </if>
+        <if test='stock_grade_id != null and !stock_grade_id.equals("")'>
+            and sp.stock_grade_id = #{stock_grade_id}
+        </if>
+        group by obk.stock_product_id, sc.category, sk.kind, spt.part, so.origin, sb.brand, se.est_no, sg.grade
+        order by spt.part, sb.brand, so.origin, se.est_no, sg.grade
+    </select>
+
+    <select id="selectMyInterests" resultType="hashMap">
+        select pc.stock_product_id as id, sc.category, sk.kind
+             , spt.part, so.origin, sb.brand, se.est_no, sg.grade
+             , ifnull(min(obk.price), 0) as price
+        from product_concern as pc
+        join stock_product AS sp on pc.stock_product_id = sp.id
+        join stock_category AS sc on sp.stock_category_id = sc.id
+        join stock_kind AS sk on sp.stock_kind_id = sk.id
+        join stock_part AS spt on sp.stock_part_id = spt.id
+        join stock_origin AS so on sp.stock_origin_id = so.id
+        join stock_brand AS sb on sp.stock_brand_id = sb.id
+        join stock_est AS se on sp.stock_est_id = se.id
+        join stock_grade AS sg on sp.stock_grade_id = sg.id
+        left join stock_keep AS skp on sp.stock_keep_id = skp.id
+        left join orders_book AS obk on pc.stock_product_id = obk.stock_product_id
+        where obk.status = 'order'
+          and sp.stock_kind_id = #{stock_kind_id}
+          and pc.deleted_at is null
+          and obk.deleted_at is null
+        <if test='stock_part_id != null and !stock_part_id.equals("")'>
+            and sp.stock_part_id = #{stock_part_id}
+        </if>
+        <if test='stock_origin_id != null and !stock_origin_id.equals("")'>
+            and sp.stock_origin_id = #{stock_origin_id}
+        </if>
+        <if test='stock_brand_id != null and !stock_brand_id.equals("")'>
+            and sp.stock_brand_id = #{stock_brand_id}
+        </if>
+        <if test='stock_est_id != null and !stock_est_id.equals("")'>
+            and sp.stock_est_id = #{stock_est_id}
+        </if>
+        <if test='stock_grade_id != null and !stock_grade_id.equals("")'>
+            and sp.stock_grade_id = #{stock_grade_id}
+        </if>
+          and pc.users_id = #{userId}
+        group by pc.stock_product_id, sc.category, sk.kind, spt.part, so.origin, sb.brand, se.est_no, sg.grade
+        order by spt.part, sb.brand, so.origin, se.est_no, sg.grade
+    </select>
+</mapper>

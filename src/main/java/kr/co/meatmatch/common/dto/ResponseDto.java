@@ -19,12 +19,12 @@ public class ResponseDto {
 
     public static ResponseEntity<ResponseDto> ok(Object data) {
         return ResponseEntity.ok(new ResponseDto(
-                ResponseStatusString.builder().code("200").msg("OK").build(),
+                ResponseStatusString.builder().code(200).msg("OK").build(),
                 data
         ));
     }
 
-    public static ResponseEntity<ResponseDto> bad(String code, String msg) {
+    public static ResponseEntity<ResponseDto> bad(int code, String msg) {
         return ResponseEntity.badRequest().body(
                 new ResponseDto(
                         ResponseStatusString.builder().code(code).msg(msg).build(),
@@ -33,7 +33,7 @@ public class ResponseDto {
         );
     }
 
-    public static ResponseEntity<ResponseDto> bad(String code, Object data) {
+    public static ResponseEntity<ResponseDto> bad(int code, Object data) {
         return ResponseEntity.badRequest().body(
                 new ResponseDto(
                         ResponseStatusObject.builder().code(code).msg(data).build()

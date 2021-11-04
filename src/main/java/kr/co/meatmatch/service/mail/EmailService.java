@@ -40,7 +40,7 @@ public class EmailService {
         for(String key : data.keySet()) {
             context.setVariable(key, data.get(key));
         }
-        String html = templateEngine.process(template, context);
+        String html = templateEngine.process("mail/"+template, context);
         helper.setText(html, true);
 
         emailSender.send(message);

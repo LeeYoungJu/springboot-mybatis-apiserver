@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 @Configuration
@@ -30,9 +31,11 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        http.cors().configurationSource(request -> new CorsConfiguration().applyPermitDefaultValues());
+
         http.csrf().disable()
                 .authorizeRequests()
-                .antMatchers(PATH.API_PATH + "/auth/*",
+                .antMatchers(PATH.API_PATH + "/auth/**",
                         PATH.API_PATH + "/appinfo/version", PATH.API_PATH + "/ppurio",
                         PATH.API_PATH + "/id/find", PATH.API_PATH + "/password/find"
                         ).permitAll()
