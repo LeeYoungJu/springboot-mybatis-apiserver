@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td colspan="2">회원 가입 요청한 유저의 정보 입니다.</td>
+            </tr>
+            <tr>
+                <td colspan="2">사용자 정보</td>
+            </tr>
+            <tr>
+                <td>아이디</td>
+                <td th:text="${authId}"></td>
+            </tr>
+            <tr>
+                <td>이름</td>
+                <td th:text="${name}"></td>
+            </tr>
+            <tr>
+                <td>이메일</td>
+                <td th:text="${email}"></td>
+            </tr>
+            <tr>
+                <td>휴대전화</td>
+                <td th:text="${phone}"></td>
+            </tr>
+            <tr>
+                <td colspan="2">회사 정보</td>
+            </tr>
+            <tr>
+                <td>상호명</td>
+                <td th:text="${company}"></td>
+            </tr>
+            <tr>
+                <td>대표자 명</td>
+                <td th:text="${bossName}"></td>
+            </tr>
+            <tr>
+                <td>사업자 등록번호</td>
+                <td th:text="${regCode}"></td>
+            </tr>
+            <tr>
+                <td>업태</td>
+                <td th:text="${condition}"></td>
+            </tr>
+        </table>
+    </body>
+</html>

@@ -8,6 +8,7 @@ import kr.co.meatmatch.dto.RegisterDto;
 import kr.co.meatmatch.mapper.meatmatch.AuthMapper;
 import kr.co.meatmatch.service.mail.EmailService;
 import kr.co.meatmatch.service.minio.MinioFileService;
+import kr.co.meatmatch.service.sms.SmsService;
 import kr.co.meatmatch.util.CommonFunc;
 import kr.co.meatmatch.util.JwtUtil;
 import kr.co.meatmatch.util.PasswordGenerator;
@@ -34,6 +35,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final MinioFileService minioFileService;
+    private final SmsService smsService;
 
     public HashMap<String, Object> login(String authId, String password) throws Exception {
         authenticationManager.authenticate(
@@ -70,7 +72,12 @@ public class AuthService {
         HashMap<String, Object> User = list.get(0);
         String tempPassword = PasswordGenerator.generatePassword();
 
-        emailService.sendTextEmail(User.get("email").toString(), "[Meatmatch] 임시 비밀번호 발급 안내 입니다.", tempPassword);   // 임시비밀번호 메일전송
+        String mailTo = User.get("email").toString();
+        String mailSubject = "[Meatmatch] 임시 비밀번호 발급 안내 입니다.";
+        HashMap<String, Object> mailData = new HashMap<>();
+        mailData.put("tempPassword", tempPassword);
+        mailData.put("authId", authId);
+        emailService.sendMail("send-password", mailSubject, mailTo, mailData);   // 임시비밀번호 메일전송
         authMapper.updatePassword(CommonFunc.encodeBCrypt(tempPassword), Integer.parseInt(User.get("id").toString()));  // DB에 임시비밀번호로 비밀번호 변경
 
         HashMap<String, Object> resMap = new HashMap<>();
@@ -128,17 +135,37 @@ public class AuthService {
 
     @Transactional
     public HashMap<String, Object> register(RegisterDto registerDto, List<HashMap<String, Object>> files) throws Exception {
-        authMapper.insertCompany(registerDto);
+        authMapper.insertCompany(registerDto);  // Step.1 회사 정보 등록
         registerDto.setPhone(registerDto.getPhone().replaceAll("-", ""));
         registerDto.setPassword(CommonFunc.encodeBCrypt(registerDto.getPassword()));
-        authMapper.insertUser(registerDto);
+        authMapper.insertUser(registerDto);     // Step.2 사용자 정보 등록
 
         int compId = registerDto.getCompanyId();
         for(int i=0; i<files.size(); i++) {
             String fileName = files.get(i).get("fileName").toString();
             MultipartFile file = (MultipartFile) files.get(i).get("fileObj");
-            minioFileService.addAttachment("company/"+compId+"/"+fileName, file);
+            minioFileService.addAttachment("company/"+compId+"/"+fileName, file);   // Step.3 이미지 파일 minio 서버에 업로드
         }
+
+        String mailSubject = "[Meatmatch] 가입 승인 신청 알림 메일.";
+        HashMap<String, Object> mailData = new HashMap<>();
+        mailData.put("authId", registerDto.getAuth_id());
+        mailData.put("name", registerDto.getName());
+        mailData.put("email", registerDto.getEmail());
+        mailData.put("phone", registerDto.getPhone());
+        mailData.put("company", registerDto.getTrade_name());
+        mailData.put("bossName", registerDto.getRepresentative_name());
+        mailData.put("regCode", registerDto.getRegistration_code());
+        mailData.put("condition", registerDto.getCondition());
+        emailService.sendToAdmin("user-approve", mailSubject, mailData);   // Step.4 관리자에게 사용자가입 메일 전송
+
+        String smsMsg = "[Meatmatch - 회원 가입 요청]\n"
+                + "아이디 : " + registerDto.getAuth_id() + "\n"
+                + "이름 : " + registerDto.getName() + "\n"
+                + "상호명 : " + registerDto.getTrade_name() + "\n\n"
+                + "회원의 가입 승인 요청이 있습니다.\n"
+                + "관리자 페이지에서 확인해주세요.";
+        smsService.sendToAdmin(smsMsg);     // Step.5 관리자에게 문자 발송
 
         HashMap<String, Object> resMap = new HashMap<>();
         resMap.put("message", "Successful user registration");

@@ -35,6 +35,13 @@ spring:
     bucket: kamex
     access-key: enjoyworks
     secret-key: enjoyworks1!
+  thymeleaf:
+    prefix: classpath:/mail/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    check-template-location: true
+    cache: false
 
 logging:
   config: classpath:log4j2.xml
