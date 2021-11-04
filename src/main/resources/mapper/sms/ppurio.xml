@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.meatmatch.mapper.sms.SmsMapper">
+
+    <insert id="sendPpurio" parameterType="kr.co.meatmatch.dto.sms.SendMsgDto">
+        insert into tb_biz_ppurio (
+               MSG_TYPE, CMID, REQUEST_TIME, SEND_TIME, DEST_PHONE, SEND_PHONE,
+               MSG_BODY, TEMPLATE_CODE, SENDER_KEY, NATION_CODE
+        )
+        values(
+               #{msgType}, #{id}, now(), now(), #{destPhone}, #{sendPhone},
+               #{msgBody}, #{templateCode}, #{senderKey}, #{nationCode}
+        )
+    </insert>
+
+</mapper>

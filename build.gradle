@@ -1,0 +1,46 @@
+plugins {
+    id 'org.springframework.boot' version '2.4.8'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+}
+
+group 'kr.co.meatmatch'
+version '1.0-SNAPSHOT'
+sourceCompatibility = '8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    compileOnly 'org.projectlombok:lombok:1.18.20'
+    annotationProcessor 'org.projectlombok:lombok:1.18.20'
+    testCompileOnly 'org.projectlombok:lombok:1.18.20'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.20'
+
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+    implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0'
+
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.0'
+    implementation 'org.mariadb.jdbc:mariadb-java-client:2.7.4'
+
+    implementation 'org.springframework:spring-context-support:5.3.10'
+    implementation 'org.springframework.boot:spring-boot-starter-mail:2.5.6'
+
+    implementation 'org.springframework.boot:spring-boot-starter-log4j2:2.5.6'
+    implementation 'com.jlefebure:spring-boot-starter-minio:1.1'
+}
+
+configurations {
+    all {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

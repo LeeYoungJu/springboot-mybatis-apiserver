@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.meatmatch.mapper.meatmatch.AuthMapper">
+
+    <select id="findUserByAuthId" resultType="hashMap">
+        select *
+        from users
+        where auth_id=#{authId}
+    </select>
+
+    <select id="findId" resultType="hashMap">
+        select *
+        from users
+        where phone = #{phNum}
+          and type = 'master'
+          and deleted_at is null
+        order by created_at desc
+    </select>
+
+    <select id="findPassword" resultType="hashMap">
+        select *
+        from users
+        where auth_id = #{authId}
+          and phone = #{phNum}
+          and type = 'master'
+          and deleted_at is null
+          and email is not null
+    </select>
+
+    <update id="updatePassword">
+        update users set password = #{password}
+        where id = #{userId}
+    </update>
+
+    <select id="checkId" resultType="int">
+        select count(*) cnt
+        from users
+        where auth_id = #{authId}
+          and deleted_at is null
+    </select>
+
+    <select id="checkEmail" resultType="int">
+        select count(*) cnt
+        from users
+        where email = #{email}
+          and deleted_at is null
+    </select>
+
+    <select id="checkRegCode" resultType="int">
+        select count(*)
+        from company
+        where registration_num = #{regCode}
+          and deleted_at is null
+    </select>
+
+    <insert id="insertCompany" parameterType="kr.co.meatmatch.dto.RegisterDto" useGeneratedKeys="true" keyProperty="companyId">
+        insert into company(company, registration_num, `condition`, sectors, name, addr, business_license
+            , meet_coc_report, meet_coc_report_2, meet_coc_report_3, meet_coc_report_4, meet_coc_report_5
+            , livestock_coc_report, livestock_coc_report_2, livestock_coc_report_3, livestock_coc_report_4, livestock_coc_report_5
+            , created_at, updated_at
+        )
+        values(#{trade_name}, #{registration_code}, #{condition}, #{sectors}, #{representative_name}, #{addr}, #{bizLicense}
+            , #{meatSellLicense1}, #{meatSellLicense2}, #{meatSellLicense3}, #{meatSellLicense4}, #{meatSellLicense5}
+            , #{distLicence1}, #{distLicence2}, #{distLicence3}, #{distLicence4}, #{distLicence5}
+            , now(), now()
+        )
+    </insert>
+
+    <insert id="insertUser" parameterType="kr.co.meatmatch.dto.RegisterDto">
+        insert into users(auth_id, password, name, email, phone, type, is_approved, company_id, created_at, updated_at)
+        values(#{auth_id}, #{password}, #{name}, #{email}, #{phone}, 'master', 'N', #{companyId}, now(), now())
+    </insert>
+
+</mapper>
