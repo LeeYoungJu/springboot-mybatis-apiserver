@@ -1,15 +1,31 @@
 package kr.co.meatmatch.util;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Base64.Encoder;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Random;
 
+@Component
 public class CommonFunc {
+    private static String profile;
+
+    @Value("${spring.profiles.active}")
+    public void setProfile(String active) {
+        profile = active;
+    }
+
+    public static boolean isRealMode() {
+        return profile.equals("real");
+    }
 
     public static String genRandomNumber(int len) {
         Random rand = new Random();
@@ -40,5 +56,20 @@ public class CommonFunc {
 
     public static String getFileExtension(String name) {
         return name.substring(name.lastIndexOf(".") + 1);
+    }
+
+    public static String removeBearerFromToken(String token) {
+        return token.substring(7);
+    }
+
+    public static String addDays(String date, int addDay) throws Exception {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        Date dateObj = format.parse(date);
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(dateObj);
+
+        cal.add(Calendar.DATE, addDay);
+        Date resDate = cal.getTime();
+        return format.format(resDate);
     }
 }

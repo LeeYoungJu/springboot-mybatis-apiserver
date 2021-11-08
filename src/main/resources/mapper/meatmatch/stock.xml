@@ -61,4 +61,151 @@
           and stock_grade.deleted_at is null
         order by stock_grade.grade
     </select>
+
+    <select id="selectMarketPrice" resultType="hashMap">
+        select t.sise_date, t.kind_nm, t.part_nm, t.origin_nm, t.brand_nm, t.est_no, t.grade_nm, t.keeping_nm, t.full_nm
+             , IFNULL(t.estimate_price, 0) estimate_price
+             , IFNULL(t.estimate_price_yd, 0) estimate_price_yd
+             , IFNULL(t.estimate_price_7yd, 0) estimate_price_7yd
+             , IFNULL(t.estimate_price - t.estimate_price_yd, 0) AS estimate_price_yd_fluct
+             , IFNULL(t.estimate_price - t.estimate_price_7yd, 0) AS estimate_price_7yd_fluct
+             , IFNULL(round((t.estimate_price - t.estimate_price_yd) / t.estimate_price_yd * 100, 2), 0) AS estimate_price_yd_fluct_rate
+             , IFNULL(round((t.estimate_price - t.estimate_price_7yd) / t.estimate_price_7yd * 100, 2), 0) AS estimate_price_7yd_fluct_rate
+        from (
+                 select #{sise_date}                               AS sise_date
+                      , std.kind_nm                                AS kind_nm
+                      , std.part_nm                                AS part_nm
+                      , std.origin_nm                              AS origin_nm
+                      , std.brand_nm                               AS brand_nm
+                      , std.est_no                                 AS est_no
+                      , std.grade_nm                               AS grade_nm
+                      , '냉동'                                       AS keeping_nm
+                      , std.full_nm                                AS full_nm
+                      , case
+                            when meatmatch_bid.estimate_price is not null then meatmatch_bid.estimate_price
+                            else meatmatch_sise.estimate_price end AS estimate_price
+                      , meatmatch_sise_yd.estimate_price           AS estimate_price_yd
+                      , meatmatch_sise_7yd.estimate_price          AS estimate_price_7yd
+                 from (
+                          select distinct ms.kind_nm   AS kind_nm
+                                        , ms.part_nm   AS part_nm
+                                        , ms.origin_nm AS origin_nm
+                                        , ms.brand_nm  AS brand_nm
+                                        , ms.est_no    AS est_no
+                                        , ms.grade_nm  AS grade_nm
+                                        , ms.full_nm   AS full_nm
+                          from meatmatch_sise AS ms
+                                   join stock_kind AS sk on ms.kind_nm = sk.kind
+                                   join stock_part AS spt on ms.part_nm = spt.part
+                                   join stock_origin AS so on ms.origin_nm = so.origin
+                                   join stock_brand AS sb on ms.brand_nm = sb.brand
+                                   join stock_grade AS sg on ms.grade_nm = sg.grade
+                                   join stock_est AS se on ms.est_no = se.est_no
+                          where ms.sise_date = #{sise_date}
+                            and ms.estimate_price > 0
+                            <if test='stock_kind_id != null and !stock_kind_id.equals("")'>
+                                and sk.id = #{stock_kind_id}
+                            </if>
+                            <if test='stock_part_id != null and !stock_part_id.equals("")'>
+                                and spt.id = #{stock_part_id}
+                            </if>
+                            <if test='stock_origin_id != null and !stock_origin_id.equals("")'>
+                                and so.id = #{stock_origin_id}
+                            </if>
+                            <if test='stock_brand_id != null and !stock_brand_id.equals("")'>
+                                and sb.id = #{stock_brand_id}
+                            </if>
+                            <if test='stock_est_id != null and !stock_est_id.equals("")'>
+                                and se.id = #{stock_est_id}
+                            </if>
+                            <if test='stock_grade_id != null and !stock_grade_id.equals("")'>
+                                and sg.id = #{stock_grade_id}
+                            </if>
+                          union
+                          select distinct sk.kind                           AS kind_nm
+                                        , spt.part                          AS part_nm
+                                        , so.origin                         AS origin_nm
+                                        , sb.brand                          AS brand_nm
+                                        , se.est_no                         AS est_no
+                                        , sg.grade                          AS grade_nm
+                                        , concat('(', sk.kind, ')', spt.part, ' - ', so.origin, ' | ', sb.brand, '(',
+                                                 se.est_no, ')-', sg.grade) AS full_nm
+                          from orders_bid AS ob
+                                   join stock_product AS sp on ob.stock_product_id = sp.id
+                                   join stock_kind AS sk on sp.stock_kind_id = sk.id
+                                   join stock_part AS spt on sp.stock_part_id = spt.id
+                                   join stock_origin AS so on sp.stock_origin_id = so.id
+                                   join stock_brand AS sb on sp.stock_brand_id = sb.id
+                                   join stock_grade AS sg on sp.stock_grade_id = sg.id
+                                   join stock_est AS se on sp.stock_est_id = se.id
+                          where ob.created_at BETWEEN #{sise_date} and #{next_date}
+                            and ob.deleted_at IS NULL
+                            and ob.status NOT IN ('NG')
+                            <if test='stock_kind_id != null and !stock_kind_id.equals("")'>
+                                and sk.id = #{stock_kind_id}
+                            </if>
+                            <if test='stock_part_id != null and !stock_part_id.equals("")'>
+                                and spt.id = #{stock_part_id}
+                            </if>
+                            <if test='stock_origin_id != null and !stock_origin_id.equals("")'>
+                                and so.id = #{stock_origin_id}
+                            </if>
+                            <if test='stock_brand_id != null and !stock_brand_id.equals("")'>
+                                and sb.id = #{stock_brand_id}
+                            </if>
+                            <if test='stock_est_id != null and !stock_est_id.equals("")'>
+                                and se.id = #{stock_est_id}
+                            </if>
+                            <if test='stock_grade_id != null and !stock_grade_id.equals("")'>
+                                and sg.id = #{stock_grade_id}
+                            </if>
+                      ) AS std
+                          left join (
+                     select full_nm        AS full_nm
+                          , estimate_price AS estimate_price
+                     from meatmatch_sise
+                     where sise_date = #{sise_date}
+                       and estimate_price > 0
+                 ) AS meatmatch_sise on std.full_nm = meatmatch_sise.full_nm
+                          left join (
+                     select full_nm        AS full_nm
+                          , estimate_price AS estimate_price
+                     from meatmatch_sise
+                     where sise_date = #{prev_date}
+                       and estimate_price > 0
+                 ) AS meatmatch_sise_yd on std.full_nm = meatmatch_sise_yd.full_nm
+                          left join (
+                     select full_nm        AS full_nm
+                          , estimate_price AS estimate_price
+                     from meatmatch_sise
+                     where sise_date = #{week_ago_date}
+                       and estimate_price > 0
+                 ) AS meatmatch_sise_7yd on std.full_nm = meatmatch_sise_7yd.full_nm
+                          left join (
+                     select sk.kind                                                                AS kind_nm
+                          , spt.part                                                               AS part_nm
+                          , so.origin                                                              AS origin_nm
+                          , sb.brand                                                               AS brand_nm
+                          , se.est_no                                                              AS est_no
+                          , sg.grade                                                               AS grade_nm
+                          , concat('(', sk.kind, ')', spt.part, ' - ', so.origin, ' | ', sb.brand, '(', se.est_no, ')-',
+                                   sg.grade)                                                       AS full_nm
+                          , round(sum(ob.cont_kg_price * ob.cont_amount) / sum(ob.cont_amount), 0) AS estimate_price
+                     from orders_bid AS ob
+                              join orders_book AS obk on ob.orders_book_id = obk.id
+                              join stock_product AS sp on ob.stock_product_id = sp.id
+                              join stock_kind AS sk on sp.stock_kind_id = sk.id
+                              join stock_part AS spt on sp.stock_part_id = spt.id
+                              join stock_origin AS so on sp.stock_origin_id = so.id
+                              join stock_brand AS sb on sp.stock_brand_id = sb.id
+                              join stock_grade AS sg on sp.stock_grade_id = sg.id
+                              join stock_est AS se on sp.stock_est_id = se.id
+                     where ob.created_at BETWEEN #{sise_date} and #{next_date}
+                       and ob.deleted_at IS NULL
+                       and ob.status NOT IN ('NG')
+                     group by sk.kind, spt.part, so.origin, sb.brand, se.est_no, sg.grade
+                 ) AS meatmatch_bid on std.full_nm = meatmatch_bid.full_nm
+             ) AS t
+        order by t.kind_nm, t.part_nm, t.origin_nm, t.brand_nm, t.est_no, t.grade_nm, t.full_nm
+    </select>
 </mapper>

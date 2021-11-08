@@ -2,65 +2,38 @@ package kr.co.meatmatch.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.lang.reflect.Field;
 
+@NoArgsConstructor
 @Getter
 @Setter
-public class RegisterDto {
-    private String name;
-    private String email;
-    private String password;
-    private String auth_id;
-    private String phone;
-    private String registration_code;
-    private String trade_name;
-    private String addr;
-    private String sectors;
-    private String representative_name;
-    private String condition;
+public class RegisterDto extends BasicDto {
+    protected String name;
+    protected String email;
+    protected String password;
+    protected String auth_id;
+    protected String phone;
+    protected String registration_code;
+    protected String trade_name;
+    protected String addr;
+    protected String sectors;
+    protected String representative_name;
+    protected String condition;
 
-    private int companyId;
+    protected int companyId;
 
-    private String bizLicense;
-    private String meatSellLicense1;
-    private String meatSellLicense2;
-    private String meatSellLicense3;
-    private String meatSellLicense4;
-    private String meatSellLicense5;
-    private String distLicence1;
-    private String distLicence2;
-    private String distLicence3;
-    private String distLicence4;
-    private String distLicence5;
-
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-        String newLine = System.getProperty("line.separator");
-
-        result.append( this.getClass().getName() );
-        result.append( " Object {" );
-        result.append(newLine);
-
-        //determine fields declared in this class only (no fields of superclass)
-        Field[] fields = this.getClass().getDeclaredFields();
-
-        //print field names paired with their values
-        for ( Field field : fields  ) {
-            result.append("  ");
-            try {
-                result.append( field.getName() );
-                result.append(": ");
-                //requires access to private field:
-                result.append( field.get(this) );
-            } catch ( IllegalAccessException ex ) {
-                System.out.println(ex);
-            }
-            result.append(newLine);
-        }
-        result.append("}");
-
-        return result.toString();
-    }
+    protected String bizLicense;
+    protected String meatSellLicense1;
+    protected String meatSellLicense2;
+    protected String meatSellLicense3;
+    protected String meatSellLicense4;
+    protected String meatSellLicense5;
+    protected String distLicence1;
+    protected String distLicence2;
+    protected String distLicence3;
+    protected String distLicence4;
+    protected String distLicence5;
 }

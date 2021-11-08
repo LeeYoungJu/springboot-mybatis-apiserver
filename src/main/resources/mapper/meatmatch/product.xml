@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.meatmatch.mapper.meatmatch.ProductMapper">
+    <select id="selectMyProducts" resultType="hashMap">
+        select orders_product.id, 'product' AS type, orders_product.status, orders_product.stock_product_id
+             , orders_product.stock_warehouse_id, orders_product.avg_weight
+             , orders_product.prod_date, orders_product.created_at, orders_product.exp_date, orders_product.bl_num
+             , stock_product.stock_est_id
+             , stock_est.est_no
+             , stock_warehouse.name warehouse, stock_warehouse.first_address
+             , stock_category.id stock_category_id, stock_category.category
+             , stock_kind.id stock_kind_id, stock_kind.kind
+             , stock_part.id stock_part_id, stock_part.part
+             , stock_origin.id stock_origin_id, stock_origin.origin
+             , stock_brand.id stock_brand_id, stock_brand.brand
+             , stock_grade.id stock_grade_id, stock_grade.grade
+             , orders_product.stock_pack_id, stock_pack.pack
+             , IFNULL(orders_product.amount, 0) - IFNULL(o_amount.order_amount, 0) - IFNULL(d_amount.done_amount, 0) AS amount
+        from orders_product
+                 join users on users.id = orders_product.users_id
+                 join stock_product on orders_product.stock_product_id = stock_product.id
+                 join stock_category on stock_product.stock_category_id = stock_category.id
+                 join stock_kind on stock_product.stock_kind_id = stock_kind.id
+                 join stock_part on stock_product.stock_part_id = stock_part.id
+                 join stock_origin on stock_product.stock_origin_id = stock_origin.id
+                 join stock_brand on stock_product.stock_brand_id = stock_brand.id
+                 join stock_grade on stock_product.stock_grade_id = stock_grade.id
+                 join stock_est on stock_product.stock_est_id = stock_est.id
+                 join stock_warehouse on orders_product.stock_warehouse_id = stock_warehouse.id
+                 join stock_pack on orders_product.stock_pack_id = stock_pack.id
+                 left join (
+            select orders_product_id, SUM(amount) AS order_amount, avg_weight
+            from orders_book
+            where status = 'order'
+              and type = 'sell'
+            group by orders_product_id
+        ) as o_amount on orders_product.id = o_amount.orders_product_id
+                 left join (
+            select orders_bid.orders_product_id, SUM(orders_bid.cont_amount) AS done_amount, IFNULL(orders_bid.calculated_avg_weight,orders_book.avg_weight) AS avg_weight
+            from orders_bid
+                     join orders_book on orders_bid.orders_book_id = orders_book.id
+            where (
+                        orders_book.status = 'done' and orders_bid.status in ('done', 'calculate')
+                )
+               or (
+                orders_book.type = 'buy' and orders_bid.status in ('done', 'calculate')
+                )
+            group by orders_bid.orders_product_id
+        ) as d_amount on orders_product.id = d_amount.orders_product_id
+        where users.company_id = #{compId}
+        <if test='status != null and !status.equals("")'>
+            <if test='status.equals("all")'>
+                and orders_product.status != 'cancel'
+            </if>
+            <if test='!status.equals("all")'>
+                and orders_product.status = #{status}
+            </if>
+        </if>
+        <if test='(sdate != null and !sdate.equals("")) and (edate != null and !edate.equals(""))'>
+            and orders_product.created_at between #{sdate} and #{edate}
+        </if>
+        group by orders_product.id
+        order by orders_product.created_at desc
+    </select>
+</mapper>

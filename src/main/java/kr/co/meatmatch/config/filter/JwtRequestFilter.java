@@ -7,7 +7,6 @@ import kr.co.meatmatch.common.dto.ResponseStatusString;
 import kr.co.meatmatch.common.dto.STATUS_CODE;
 import kr.co.meatmatch.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,17 +22,26 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
 
-    @Autowired
-    private UserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
+
+//    private static final List<String> EXCLUDE_URL =
+//            Collections.unmodifiableList(
+//                    Arrays.asList(
+//                            "/api/member",
+//                            "/authenticate"
+//                    ));
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -49,7 +57,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
 
             if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                jwtUtil.JWT = jwt;
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
                 if(jwtUtil.validateToken(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
@@ -64,12 +71,19 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch(Exception e) {
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            response.setStatus(HttpStatus.resolve(STATUS_CODE.INVALID_TOKEN).value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-            ResponseDto errorObj = new ResponseDto(ResponseStatusString.builder().code(STATUS_CODE.BAD).msg("Invalid token").build(), null);
+            HashMap<String, Object> invalidTokenMap = new HashMap<>();
+            invalidTokenMap.put("message", "Unauthenticated.");
+//            ResponseDto errorObj = new ResponseDto(ResponseStatusString.builder().code(STATUS_CODE.INVALID_TOKEN).msg("Unauthenticated.").build(), null);
 
-            objectMapper.writeValue(response.getWriter(), errorObj);
+            objectMapper.writeValue(response.getWriter(), invalidTokenMap);
         }
     }
+
+//    @Override
+//    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+//        return EXCLUDE_URL.stream().anyMatch(exclude -> exclude.equalsIgnoreCase(request.getServletPath()));
+//    }
 }

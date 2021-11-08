@@ -19,16 +19,12 @@ public class AppInfoController {
     private final AppInfoService appInfoService;
 
     @GetMapping("/version")
-    public ResponseEntity<?> getAppVersion() throws Exception {
-        try {
-            HashMap<String, Object> version = appInfoService.getAppVersion();
+    public ResponseEntity<ResponseDto> getAppVersion() throws Exception {
+        HashMap<String, Object> version = appInfoService.getAppVersion();
 
-            HashMap<String, Object> resMap = new HashMap<>();
-            resMap.put("version", version.get("ver"));
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("version", version.get("ver"));
 
-            return ResponseDto.ok(resMap);
-        } catch (Exception e) {
-            return ResponseDto.bad(STATUS_CODE.BAD, e.getMessage());
-        }
+        return ResponseDto.ok(resMap);
     }
 }

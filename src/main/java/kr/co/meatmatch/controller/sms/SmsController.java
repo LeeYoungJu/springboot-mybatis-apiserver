@@ -17,12 +17,8 @@ public class SmsController {
     private final SmsService smsService;
 
     @PostMapping("/ppurio")
-    public ResponseEntity<?> sendRegisterCode(@RequestBody HashMap<String, Object> request) {
-        try {
-            String code = smsService.sendApproveCode(request.get("phone").toString());
-            return ResponseDto.ok(code);
-        } catch (Exception e) {
-            return ResponseDto.bad(STATUS_CODE.BAD, e.getMessage());
-        }
+    public ResponseEntity<ResponseDto> sendRegisterCode(@RequestBody HashMap<String, Object> request) throws Exception {
+        String code = smsService.sendApproveCode(request.get("phone").toString());
+        return ResponseDto.ok(code);
     }
 }

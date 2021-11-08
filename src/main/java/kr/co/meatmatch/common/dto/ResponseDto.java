@@ -19,7 +19,7 @@ public class ResponseDto {
 
     public static ResponseEntity<ResponseDto> ok(Object data) {
         return ResponseEntity.ok(new ResponseDto(
-                ResponseStatusString.builder().code(200).msg("OK").build(),
+                ResponseStatusString.builder().code(STATUS_CODE.OK).msg("OK").build(),
                 data
         ));
     }

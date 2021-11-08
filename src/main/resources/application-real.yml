@@ -1,0 +1,52 @@
+server:
+  port: 8090
+
+spring:
+  datasource:
+    hikari:
+      primary:
+        driver-class-name: org.mariadb.jdbc.Driver
+        jdbc-url: jdbc:mariadb://192.168.2.123:1405/meatmatch
+        username: yjlee
+        password: qwe123!@#
+      secondary:
+        driver-class-name: org.mariadb.jdbc.Driver
+        jdbc-url: jdbc:mariadb://192.168.2.123:1405/kamex_sms
+        username: yjlee
+        password: qwe123!@#
+      third:
+        driver-class-name: org.mariadb.jdbc.Driver
+        jdbc-url: jdbc:mariadb://192.168.2.123:1405/kamex_nicedata
+        username: yjlee
+        password: qwe123!@#
+  mail:
+    host: smtp.office365.com
+    port: 587
+    username: kamex1@gbnet.kr
+    password: eofidrnao1!
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  minio:
+    url: http://222.239.193.146:9000
+    bucket: kamex
+    access-key: enjoyworks
+    secret-key: enjoyworks1!
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    check-template-location: true
+    cache: false
+
+logging:
+  config: classpath:log4j2.xml
+
+constants:
+  mail-from: kamex1@gbnet.kr
+  mail-admins: leezerozoo@gmail.com
+  phone-admin: "01055243265"

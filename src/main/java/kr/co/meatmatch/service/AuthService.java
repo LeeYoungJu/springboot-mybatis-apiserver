@@ -1,6 +1,6 @@
 package kr.co.meatmatch.service;
 
-import kr.co.meatmatch.common.exception.DataNotFoundException;
+import kr.co.meatmatch.common.exception.UserNotFoundException;
 import kr.co.meatmatch.common.exception.DuplicatedAuthDataException;
 import kr.co.meatmatch.common.exception.InvalidDataException;
 import kr.co.meatmatch.common.exception.InvalidLengthException;
@@ -37,12 +37,8 @@ public class AuthService {
     private final MinioFileService minioFileService;
     private final SmsService smsService;
 
-    public String getMyAuthId() throws Exception {
-        return jwtUtil.extractUsername(jwtUtil.JWT);
-    }
-
-    public HashMap<String, Object> getMyUserObj() throws Exception {
-        return authMapper.findUserByAuthId(this.getMyAuthId());
+    public HashMap<String, Object> getMyUserByAuthId(String authId) throws Exception {
+        return authMapper.findUserByAuthId(authId);
     }
 
     public HashMap<String, Object> login(String authId, String password) throws Exception {
@@ -51,7 +47,7 @@ public class AuthService {
         );
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authId);
-        final String jwt = jwtUtil.generateToken(userDetails);
+        final String jwt = jwtUtil.generateToken(userDetails, 1000*60*60*24*10);
 
         HashMap<String, Object> user = authMapper.findUserByAuthId(authId);
         user.remove("password");
@@ -66,7 +62,7 @@ public class AuthService {
     public List<HashMap<String, Object>> findIdByPhNum(String phNum) throws Exception {
         List<HashMap<String, Object>> list = authMapper.findId(phNum);
         if(list.size() == 0) {
-            throw new DataNotFoundException();
+            throw new UserNotFoundException();
         }
         return list;
     }
@@ -75,7 +71,7 @@ public class AuthService {
     public HashMap<String, Object> findPassword(String authId, String phNum) throws Exception {
         List<HashMap<String, Object>> list = authMapper.findPassword(authId, phNum);
         if(list.size() == 0) {
-            throw new DataNotFoundException();
+            throw new UserNotFoundException();
         }
         HashMap<String, Object> User = list.get(0);
         String tempPassword = PasswordGenerator.generatePassword();

@@ -5,12 +5,10 @@ import kr.co.meatmatch.common.dto.ResponseDto;
 import kr.co.meatmatch.common.dto.STATUS_CODE;
 import kr.co.meatmatch.dto.MainSearchDto;
 import kr.co.meatmatch.service.MainPageService;
+import kr.co.meatmatch.util.CommonFunc;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,22 +20,17 @@ public class MainPageController {
     private final MainPageService mainPageService;
 
     @PostMapping("/custom-index")
-    public ResponseEntity<?> selectOrdersBooks(@RequestBody MainSearchDto mainSearchDto) {
-        try {
-            HashMap<String, Object> resMap = mainPageService.selectOrdersBooks(mainSearchDto);
-            return ResponseDto.ok(resMap);
-        } catch (Exception e) {
-            return ResponseDto.bad(STATUS_CODE.BAD, e.getMessage());
-        }
+    public ResponseEntity<ResponseDto> selectOrdersBooks(@RequestBody MainSearchDto mainSearchDto) throws Exception {
+        HashMap<String, Object> resMap = mainPageService.selectOrdersBooks(mainSearchDto);
+        return ResponseDto.ok(resMap);
     }
 
     @PostMapping("/concern-index")
-    public ResponseEntity<?> selectMyInterests(@RequestBody MainSearchDto mainSearchDto) {
-        try {
-            HashMap<String, Object> resMap = mainPageService.selectMyInterests(mainSearchDto);
-            return ResponseDto.ok(resMap);
-        } catch (Exception e) {
-            return ResponseDto.bad(STATUS_CODE.BAD, e.getMessage());
-        }
+    public ResponseEntity<ResponseDto> selectMyInterests(@RequestHeader(name = "Authorization") String token
+                                                        , @RequestBody MainSearchDto mainSearchDto
+    ) throws Exception {
+        String realToken = CommonFunc.removeBearerFromToken(token);     // token 앞에 Bearer이 붙어있어서 제거해줘야한다.
+        HashMap<String, Object> resMap = mainPageService.selectMyInterests(mainSearchDto, realToken);
+        return ResponseDto.ok(resMap);
     }
 }

@@ -5,6 +5,7 @@ import kr.co.meatmatch.dto.sms.SendMsgDto;
 import kr.co.meatmatch.mapper.sms.SmsMapper;
 import kr.co.meatmatch.util.CommonFunc;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 public class SmsService {
     private final SmsMapper smsMapper;
 
+    @Value("${constants.phone-admin}")
+    String adminPhNum;
 
     public String sendApproveCode(String phNum) throws Exception {
         String code = CommonFunc.genRandomNumber(4);
@@ -23,7 +26,8 @@ public class SmsService {
     }
 
     public int sendToAdmin(String msg) throws Exception {
-        return this.sendSmsMsg(SMS.ADMIN_PH_NUM, msg, SMS.TEMPLATE_ADMIN_USER);
+        System.out.println("admin num : " + adminPhNum);
+        return this.sendSmsMsg(adminPhNum, msg, SMS.TEMPLATE_ADMIN_USER);
     }
 
     public int sendSmsMsg(String phNum, String msg, String template) throws Exception {
