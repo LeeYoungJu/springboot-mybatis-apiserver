@@ -21,6 +21,7 @@ public class MainPageController {
 
     @PostMapping("/custom-index")
     public ResponseEntity<ResponseDto> selectOrdersBooks(@RequestBody MainSearchDto mainSearchDto) throws Exception {
+        System.out.println(mainSearchDto);
         HashMap<String, Object> resMap = mainPageService.selectOrdersBooks(mainSearchDto);
         return ResponseDto.ok(resMap);
     }

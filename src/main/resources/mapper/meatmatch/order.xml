@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.meatmatch.mapper.meatmatch.OrderMapper">
+    <select id="selectOrdersProductInfo" resultType="hashMap">
+        select orders_product.id as orders_product_id
+             , orders_product.parents_id, orders_product.status, orders_product.stock_product_id
+             , orders_product.stock_warehouse_id, orders_product.avg_weight
+             , IFNULL(orders_product.amount, 0)  - IFNULL(o_amount.order_amount, 0) - IFNULL(d_amount.done_amount, 0) AS amount
+             , orders_product.circulration_history_num, orders_product.management_num, orders_product.lot_num
+             , orders_product.created_at, orders_product.updated_at, orders_product.exp_date
+             , stock_category.id stock_category_id, stock_category.category
+             , stock_kind.id stock_kind_id, stock_kind.kind
+             , stock_part.id stock_part_id, stock_part.part
+             , stock_origin.id stock_origin_id, stock_origin.origin
+             , stock_brand.id stock_brand_id, stock_brand.brand
+             , stock_grade.id stock_grade_id, stock_grade.grade
+             , orders_product.prod_date, orders_product.bl_num
+             , orders_product.stock_pack_id, stock_pack.pack
+             , stock_product.stock_est_id, stock_est.est_no
+        from orders_product
+            join stock_product on orders_product.stock_product_id = stock_product.id
+            join stock_category on stock_product.stock_category_id = stock_category.id
+            join stock_kind on stock_product.stock_kind_id = stock_kind.id
+            join stock_part on stock_product.stock_part_id = stock_part.id
+            join stock_origin on stock_product.stock_origin_id = stock_origin.id
+            join stock_brand on stock_product.stock_brand_id = stock_brand.id
+            join stock_grade on stock_product.stock_grade_id = stock_grade.id
+            join stock_est on stock_product.stock_est_id = stock_est.id
+            join stock_warehouse on orders_product.stock_warehouse_id = stock_warehouse.id
+            join stock_pack on orders_product.stock_pack_id = stock_pack.id
+            left join (
+                select orders_product_id, SUM(amount) order_amount
+                from orders_book
+                where status = 'order'
+                  and type = 'sell'
+                  and orders_product_id = #{orders_product_id}
+            ) as o_amount on orders_product.id = o_amount.orders_product_id
+            left join (
+                select orders_bid.orders_product_id, SUM(orders_bid.cont_amount) done_amount
+                from orders_bid
+                    join orders_book on orders_bid.orders_book_id = orders_book.id
+                where (
+                    orders_book.status = 'done'
+                      and orders_bid.orders_product_id = #{orders_product_id}
+                      and orders_bid.status in ('done', 'calculate')
+                    ) or (
+                    orders_book.type = 'buy'
+                      and orders_bid.orders_product_id = #{orders_product_id}
+                      and orders_bid.status in ('done', 'calculate')
+                    )
+                group by orders_bid.orders_product_id
+            ) as d_amount on orders_product.id = d_amount.orders_product_id
+        where orders_product.id = #{orders_product_id}
+        <if test='status != null and !status.equals("")'>
+            and orders_product.status = #{status}
+        </if>
+        group by orders_product.id
+    </select>
+
+    <select id="getOrdersBookListByProductId" resultType="hashMap">
+        select orders_book.id  as orders_book_id
+             , orders_book.type
+             , orders_book.status
+             , orders_book.stock_product_id
+             , orders_book.exp_date
+             , orders_book.orders_product_id
+             , orders_book.price
+             , orders_book.avg_weight
+             , orders_book.created_at
+             , orders_book.amount
+             , IFNULL(orders_bids.bids_amount, 0) AS bid_amount
+        from orders_book
+             left join orders_product on orders_product.id = orders_book.orders_product_id
+             left join (
+                select orders_book_id, SUM(IFNULL(orders_bid.cont_amount, 0)) AS bids_amount
+                from orders_bid
+                where orders_product_id = #{orders_product_id}
+                  and orders_bid.status in ('done', 'calculate')
+                group by orders_bid.orders_book_id
+             ) as orders_bids on orders_book.id = orders_bids.orders_book_id
+        where orders_book.orders_product_id = #{orders_product_id}
+        <if test='status != null and !status.equals("")'>
+            and orders_book.status = #{status}
+        </if>
+        <if test='orders_book_id != null and orders_book_id > 0'>
+            and orders_book.id = #{orders_book_id}
+        </if>
+        order by orders_book.id desc
+    </select>
+    
+    <select id="getOrdersBidListByProductId" resultType="hashMap">
+        select orders_bid.id as orders_bid_id, orders_bid.stock_product_id, orders_bid.orders_book_id
+             , orders_bid.orders_product_id, orders_bid.orders_book_id, orders_bid.seller_id, orders_bid.calculated_price, orders_bid.buyer_id
+             , orders_bid.admins_id, orders_bid.status, orders_bid.product_status, orders_bid.cont_amount amount
+             , IF(orders_bid.status = 'calculate', orders_bid.calculated_kg_price, orders_bid.cont_kg_price) price
+             , orders_bid.created_at
+             , IF(orders_bid.status = 'calculate', IFNULL(orders_bid.calculated_fee_price, 0), IFNULL(orders_bid.cont_fee_price, 0)) AS fee
+             , IF(orders_bid.status = 'calculate', orders_bid.calculated_tot_weight, orders_bid.cont_tot_weight) total_weight
+             , orders_book.avg_weight AS book_avg_weight
+             , IF(buy_users.company_id = #{compId}, 'buy', 'sell') AS type
+        from orders_bid
+            join users as buy_users on buy_users.id = orders_bid.buyer_id
+            join users as sell_users on sell_users.id = orders_bid.seller_id
+            join orders_book on orders_bid.orders_book_id = orders_book.id
+        where orders_bid.orders_product_id = #{orders_product_id}
+        <if test='status != null and !status.equals("")'>
+            and orders_bid.status = #{status}
+        </if>
+        <if test='orders_book_id != null and orders_book_id > 0'>
+            and orders_bid.orders_book_id = #{orders_book_id}
+        </if>
+        order by orders_bid.id desc
+    </select>
+
+    <select id="selectBuyBookInfo" resultType="hashMap">
+        select orders_book.id, orders_book.created_at
+             , sk.kind, st.part, so.origin, sb.brand, se.est_no, sg.grade
+             , spk.pack, orders_book.buy_hope_mon, orders_book.buy_hope_opt, orders_book.price, orders_book.amount
+        from orders_book
+            join stock_product AS sp on orders_book.stock_product_id = sp.id
+            join stock_kind AS sk on sp.stock_kind_id = sk.id
+            join stock_part AS st on sp.stock_part_id = st.id
+            join stock_origin AS so on sp.stock_origin_id = so.id
+            join stock_brand AS sb on sp.stock_brand_id = sb.id
+            join stock_est AS se on sp.stock_est_id = se.id
+            join stock_grade AS sg on sp.stock_grade_id = sg.id
+            left join stock_pack AS spk on orders_book.stock_pack_id = spk.id
+        where orders_book.id = #{orders_book_id}
+          and orders_book.type = 'buy'
+    </select>
+    
+    <select id="getOrdersWarehouseList" resultType="hashMap">
+        select stock_warehouse.name, stock_warehouse.first_address
+        from orders_warehouse
+            join stock_warehouse on orders_warehouse.stock_warehouse_id = stock_warehouse.id
+        where orders_warehouse.orders_book_id = #{ordersBookId}
+        order by stock_warehouse.name
+    </select>
+
+    <select id="selectCompletedTradeInfo" resultType="hashMap">
+        select buy_company.company buy_comp, sell_company.company sell_comp, orders_bid.id
+             , stock_kind.kind, stock_part.part, stock_origin.origin
+             , stock_brand.brand, stock_est.est_no, stock_grade.grade
+             , orders_product.prod_date, orders_product.exp_date, stock_pack.pack
+             , stock_warehouse.name warehouse, stock_warehouse.first_address
+             , orders_product.bl_num, orders_product.circulration_history_num, orders_product.management_num
+             , orders_bid.cont_amount amount
+             , IF(orders_bid.status = 'calculate', orders_bid.calculated_kg_price, orders_bid.cont_kg_price) price
+             , IF(orders_bid.status = 'calculate', orders_bid.calculated_avg_weight, orders_bid.cont_avg_weight) avg_weight
+             , IF(orders_bid.status = 'calculate', orders_bid.calculated_price, IF(buy_users.company_id = #{compId}, orders_bid.cont_price + ROUND(orders_bid.cont_price * (orders_bid.extra_charge_rate/100)), orders_bid.cont_price)) tot_price
+             , IF(orders_bid.status = 'calculate', orders_bid.calculated_fee_price, orders_bid.cont_fee_price) fee_price
+             , orders_bid.created_at
+             , orders_bid.status, IF(buy_users.company_id = #{compId}, 'buy', 'sell') type
+        from orders_bid
+            join users as buy_users on buy_users.id = orders_bid.buyer_id
+            join users as sell_users on sell_users.id = orders_bid.seller_id
+            join company as buy_company on buy_company.id = buy_users.company_id
+            join company as sell_company on sell_company.id = sell_users.company_id
+            join orders_book on orders_bid.orders_book_id = orders_book.id
+            join orders_product on orders_bid.orders_product_id = orders_product.id
+            join stock_product on orders_bid.stock_product_id = stock_product.id
+            join stock_kind on stock_product.stock_kind_id = stock_kind.id
+            join stock_part on stock_product.stock_part_id = stock_part.id
+            join stock_origin on stock_product.stock_origin_id = stock_origin.id
+            join stock_brand on stock_product.stock_brand_id = stock_brand.id
+            join stock_est on stock_product.stock_est_id = stock_est.id
+            join stock_grade on stock_product.stock_grade_id = stock_grade.id
+            join stock_pack on orders_product.stock_pack_id = stock_pack.id
+            join stock_warehouse on orders_product.stock_warehouse_id = stock_warehouse.id
+        where orders_bid.id = #{orders_bid_id}
+    </select>
+</mapper>

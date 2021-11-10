@@ -1,7 +1,14 @@
 package kr.co.meatmatch.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.lang.reflect.Field;
 
+/*
+ * 페이징을 처리하지 않는 DTO는 이 클래스를 상속하면 되고
+ * 페이징을 처리하는 DTO는 무조건 BasicPageDto 를 상속해야한다.
+ */
 public class BasicDto {
     public String toString() {
         StringBuilder result = new StringBuilder();

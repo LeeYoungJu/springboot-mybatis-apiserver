@@ -3,3 +3,5 @@
 build
 logs
 src/.DS_Store
+src/main/.DS_Store
+src/resources/application.yml

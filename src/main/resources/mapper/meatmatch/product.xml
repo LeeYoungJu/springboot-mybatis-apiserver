@@ -63,4 +63,196 @@
         group by orders_product.id
         order by orders_product.created_at desc
     </select>
+
+    <select id="selectSellingProducts" resultType="hashMap">
+        select orders_book.id, orders_book.type, orders_book.stock_product_id, orders_book.status
+             , orders_book.amount, orders_book.min_sale_amount, orders_book.price, orders_book.avg_weight, orders_book.created_at
+             , orders_book.amount - SUM(IFNULL(orders_bid.cont_amount, 0)) as remain_amount
+             , stock_category.id stock_category_id, stock_category.category
+             , stock_kind.id stock_kind_id, stock_kind.kind
+             , stock_part.id stock_part_id, stock_part.part
+             , stock_origin.id stock_origin_id, stock_origin.origin
+             , stock_brand.id stock_brand_id, stock_brand.brand
+             , stock_grade.id stock_grade_id, stock_grade.grade
+             , stock_product.stock_est_id, stock_est.est_no
+             , orders_book.stock_pack_id, stock_pack.pack
+             , GROUP_CONCAT(orders_warehouse.stock_warehouse_id SEPARATOR ',') as warehouse_all
+             , orders_product.stock_warehouse_id, orders_product.prod_date
+             , orders_product.exp_date, orders_product.bl_num
+             , orders_product.id AS orders_product_id
+        from orders_book
+                 join users on users.id = orders_book.users_id
+                 join orders_product on orders_book.orders_product_id = orders_product.id
+                 join orders_warehouse on orders_book.id = orders_warehouse.orders_book_id
+                 join stock_product on orders_book.stock_product_id = stock_product.id
+                 join stock_category on stock_product.stock_category_id = stock_category.id
+                 join stock_kind on stock_product.stock_kind_id = stock_kind.id
+                 join stock_part on stock_product.stock_part_id = stock_part.id
+                 join stock_origin on stock_product.stock_origin_id = stock_origin.id
+                 join stock_brand on stock_product.stock_brand_id = stock_brand.id
+                 join stock_grade on stock_product.stock_grade_id = stock_grade.id
+                 join stock_est on stock_product.stock_est_id = stock_est.id
+                 join stock_pack on orders_book.stock_pack_id = stock_pack.id
+                 left join orders_bid on orders_book.id = orders_bid.orders_book_id and orders_bid.status in ('done','calculate')
+        where users.company_id = #{compId}
+          and orders_book.type =  'sell'
+          and orders_book.status = 'order'
+        group by orders_book.id
+        order by orders_book.created_at desc
+    </select>
+    
+    <select id="selectEstList" resultType="hashMap">
+        select id, est_no
+        from stock_est
+        where id in (${ids})
+    </select>
+
+    <select id="selectWarehouseList" resultType="hashMap">
+        select id, name, first_address
+        from stock_warehouse
+        where id in (${ids})
+    </select>
+    
+    <select id="selectBuyingProducts" resultType="hashMap">
+         select orders_book.id, orders_book.type, orders_book.stock_product_id, orders_book.status
+              , orders_book.amount, orders_book.price, orders_book.avg_weight, orders_book.created_at
+              , orders_book.amount - SUM(IFNULL(orders_bid.cont_amount, 0)) as remain_amount
+              , stock_category.id stock_category_id, stock_category.category
+              , stock_kind.id stock_kind_id, stock_kind.kind, stock_part.id stock_part_id, stock_part.part
+              , stock_origin.id stock_origin_id, stock_origin.origin
+              , stock_brand.id stock_brand_id, stock_brand.brand
+              , stock_grade.id stock_grade_id, stock_grade.grade
+              , stock_product.stock_est_id, stock_est.est_no
+              , orders_book.stock_pack_id, stock_pack.pack
+              , GROUP_CONCAT(orders_warehouse.stock_warehouse_id SEPARATOR ',') as warehouse_all
+              , orders_book.buy_hope_mon, orders_book.buy_hope_opt
+         from orders_book
+                  join users on users.id = orders_book.users_id
+                  join orders_warehouse on orders_book.id = orders_warehouse.orders_book_id
+                  join stock_product on orders_book.stock_product_id = stock_product.id
+                  join stock_category on stock_product.stock_category_id = stock_category.id
+                  join stock_kind on stock_product.stock_kind_id = stock_kind.id
+                  join stock_part on stock_product.stock_part_id = stock_part.id
+                  join stock_origin on stock_product.stock_origin_id = stock_origin.id
+                  join stock_brand on stock_product.stock_brand_id = stock_brand.id
+                  join stock_grade on stock_product.stock_grade_id = stock_grade.id
+                  join stock_est on stock_product.stock_est_id = stock_est.id
+                  left join stock_pack on orders_book.stock_pack_id = stock_pack.id
+                  left join orders_bid on orders_book.id = orders_bid.orders_book_id and
+                                          orders_bid.status in ('done', 'calculate')
+         where users.company_id = #{compId}
+           and orders_book.type = 'buy'
+           and orders_book.status = 'order'
+         group by orders_book.id
+         order by orders_book.created_at desc
+    </select>
+    
+    <select id="selectCalculateInfo" resultType="hashMap">
+        select COALESCE(SUM(IF(buy_users.company_id = #{compId}, IF(orders_bid.status = 'calculate', orders_bid.calculated_price, orders_bid.cont_price + ROUND(orders_bid.cont_price * (orders_bid.extra_charge_rate/100))), 0)),0) tot_buy_price
+             , COALESCE(SUM(IF(sell_users.company_id = #{compId}, (IF(orders_bid.status = 'calculate', orders_bid.calculated_price, orders_bid.cont_price)), 0)),0) tot_sell_price
+             , IF(orders_bid.status = 'calculate', IFNULL(calculated_fee_price,0), IFNULL(cont_fee_price,0)) fee
+        from orders_bid
+            join users as buy_users on buy_users.id = orders_bid.buyer_id
+            join users as sell_users on sell_users.id = orders_bid.seller_id
+            join orders_book on orders_bid.orders_book_id = orders_book.id
+        where 1 = 1
+        <if test='type != null and !type.equals("")'>
+            <if test='type.equals("all")'>
+                and (buy_users.company_id = #{compId} or sell_users.company_id = #{compId})
+            </if>
+            <if test='type.equals("buy")'>
+                and buy_users.company_id = #{compId}
+            </if>
+            <if test='type.equals("sell")'>
+                and sell_users.company_id = #{compId}
+            </if>
+        </if>
+        <if test='status != null and !status.equals("")'>
+            <if test='status.equals("all")'>
+                and (
+                    (orders_bid.status = 'calculate'
+                <if test='!date.equals("all")'>
+                    and orders_bid.calculated_at between #{s_date} and #{e_date}
+                </if>
+                    )
+                    or
+                    (orders_bid.status = 'done'
+                <if test='!date.equals("all")'>
+                     and orders_bid.conclusion_at between #{s_date} and #{e_date})
+                </if>
+                )
+            </if>
+            <if test='status.equals("done")'>
+                and orders_bid.status = 'done'
+                <if test='!date.equals("all")'>
+                    and orders_bid.conclusion_at between #{s_date} and #{e_date}
+                </if>
+            </if>
+            <if test='status.equals("calculate")'>
+                and orders_bid.status = 'calculate'
+                <if test='!date.equals("all")'>
+                    and orders_bid.calculated_at between #{s_date} and #{e_date}
+                </if>
+            </if>
+        </if>
+    </select>
+    
+    <select id="selectCompletedTradeList" resultType="hashMap">
+        select *
+        from (
+            select orders_bid.id, orders_bid.status
+                 , IF(orders_bid.status = 'calculate', orders_bid.calculated_at, orders_bid.conclusion_at) created_at
+                 , stock_part.part, orders_bid.cont_amount as amount
+                 , IF(orders_bid.status = 'done', orders_bid.cont_avg_weight, orders_bid.calculated_avg_weight) avg_weight
+                 , IF(sell_users.company_id = #{compId}, 'sell', 'buy') type
+            from orders_bid
+                join users as buy_users on buy_users.id = orders_bid.buyer_id
+                join users as sell_users on sell_users.id = orders_bid.seller_id
+                join orders_book on orders_bid.orders_book_id = orders_book.id
+                join stock_product on orders_bid.stock_product_id = stock_product.id
+                join stock_part on stock_product.stock_part_id = stock_part.id
+                join orders_product on orders_bid.orders_product_id = orders_product.id
+            where 1 = 1
+            <if test='type != null and !type.equals("")'>
+                <if test='type.equals("all")'>
+                    and (buy_users.company_id = #{compId} or sell_users.company_id = #{compId})
+                </if>
+                <if test='type.equals("buy")'>
+                    and buy_users.company_id = #{compId}
+                </if>
+                <if test='type.equals("sell")'>
+                    and sell_users.company_id = #{compId}
+                </if>
+            </if>
+            <if test='status != null and !status.equals("")'>
+                <if test='status.equals("all")'>
+                    and (
+                    (orders_bid.status = 'calculate'
+                    <if test='!date.equals("all")'>
+                        and orders_bid.calculated_at between #{s_date} and #{e_date}
+                    </if>
+                    )
+                    or
+                    (orders_bid.status = 'done'
+                    <if test='!date.equals("all")'>
+                        and orders_bid.conclusion_at between #{s_date} and #{e_date})
+                    </if>
+                    )
+                </if>
+                <if test='status.equals("done")'>
+                    and orders_bid.status = 'done'
+                    <if test='!date.equals("all")'>
+                        and orders_bid.conclusion_at between #{s_date} and #{e_date}
+                    </if>
+                </if>
+                <if test='status.equals("calculate")'>
+                    and orders_bid.status = 'calculate'
+                    <if test='!date.equals("all")'>
+                        and orders_bid.calculated_at between #{s_date} and #{e_date}
+                    </if>
+                </if>
+            </if>
+        ) A
+        order by created_at desc
+    </select>
 </mapper>

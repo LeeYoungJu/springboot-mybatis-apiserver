@@ -1,24 +1,23 @@
 package kr.co.meatmatch.dto;
 
-import kr.co.meatmatch.dto.paging.BasicPageDto;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.validation.constraints.NotEmpty;
 
-@NoArgsConstructor
 @Getter
 @Setter
-public class MyProductsSearchDto extends BasicPageDto {
+public class MyTradeCalcInfoSearchDto extends BasicDto {
     @NotEmpty
     protected String status;
 
     @NotEmpty
-    protected String sdate;
+    protected String type;
 
     @NotEmpty
-    protected String edate;
+    protected String date;
+    protected String s_date;
+    protected String e_date;
 
     protected int compId;
 }

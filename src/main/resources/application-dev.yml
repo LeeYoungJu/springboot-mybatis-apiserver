@@ -50,3 +50,16 @@ constants:
   mail-from: kamex1@gbnet.kr
   mail-admins: dmlqhqhqh@naver.com,yjlee@meatbox.co.kr
   phone-admin: "01055243265"
+  page-size: 10
+
+pagehelper:
+  helper-dialect: mariadb
+  auto-dialect: true
+  page-size-zero: false
+  reasonable: true
+  offset-as-page-num: false
+  row-bounds-with-count: false
+  auto-runtime-dialect: false
+  close-conn: true
+  default-count: true
+  support-methods-arguments: true

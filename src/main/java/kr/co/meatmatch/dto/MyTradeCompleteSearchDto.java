@@ -10,15 +10,17 @@ import javax.validation.constraints.NotEmpty;
 @NoArgsConstructor
 @Getter
 @Setter
-public class MyProductsSearchDto extends BasicPageDto {
+public class MyTradeCompleteSearchDto extends BasicPageDto {
     @NotEmpty
     protected String status;
 
     @NotEmpty
-    protected String sdate;
+    protected String type;
 
     @NotEmpty
-    protected String edate;
+    protected String date;
+    protected String s_date;
+    protected String e_date;
 
     protected int compId;
 }

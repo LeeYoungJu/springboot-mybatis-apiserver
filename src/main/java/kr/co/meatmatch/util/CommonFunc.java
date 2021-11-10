@@ -5,6 +5,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -71,5 +72,13 @@ public class CommonFunc {
         cal.add(Calendar.DATE, addDay);
         Date resDate = cal.getTime();
         return format.format(resDate);
+    }
+
+    public static String[] splitDate(String date, String regex) {
+        String[] res = new String[2];
+        String[] dateArr = date.split(regex);
+        res[0] = dateArr[0] + " 00:00:00";
+        res[1] = dateArr[1] + " 23:59:59";
+        return res;
     }
 }
