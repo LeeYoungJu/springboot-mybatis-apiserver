@@ -2,7 +2,7 @@ package kr.co.meatmatch.controller;
 
 import kr.co.meatmatch.common.constants.PATH;
 import kr.co.meatmatch.common.dto.ResponseDto;
-import kr.co.meatmatch.dto.MarketPriceSearchDto;
+import kr.co.meatmatch.dto.stock.MarketPriceSearchDto;
 import kr.co.meatmatch.service.StockService;
 import kr.co.meatmatch.util.CommonFunc;
 import lombok.RequiredArgsConstructor;

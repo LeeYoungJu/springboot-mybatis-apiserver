@@ -1,6 +1,6 @@
 package kr.co.meatmatch.service;
 
-import kr.co.meatmatch.dto.MarketPriceSearchDto;
+import kr.co.meatmatch.dto.stock.MarketPriceSearchDto;
 import kr.co.meatmatch.mapper.meatmatch.StockMapper;
 import kr.co.meatmatch.util.CommonFunc;
 import kr.co.meatmatch.util.JwtUtil;

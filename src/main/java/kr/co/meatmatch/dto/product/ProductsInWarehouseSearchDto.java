@@ -1,6 +1,6 @@
 package kr.co.meatmatch.dto.product;
 
-import kr.co.meatmatch.dto.paging.BasicPageDto;
+import kr.co.meatmatch.dto.BasicPageDto;
 import lombok.Getter;
 import lombok.Setter;
 

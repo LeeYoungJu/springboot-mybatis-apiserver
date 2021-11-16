@@ -1,6 +1,6 @@
 package kr.co.meatmatch.mapper.meatmatch;
 
-import kr.co.meatmatch.dto.*;
+import kr.co.meatmatch.dto.order.*;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.HashMap;

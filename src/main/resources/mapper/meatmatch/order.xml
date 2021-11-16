@@ -51,7 +51,8 @@
              , orders_product.stock_warehouse_id, orders_product.avg_weight
              , IFNULL(orders_product.amount, 0)  - IFNULL(o_amount.order_amount, 0) - IFNULL(d_amount.done_amount, 0) AS amount
              , orders_product.circulration_history_num, orders_product.management_num, orders_product.lot_num
-             , orders_product.created_at, orders_product.updated_at, orders_product.exp_date
+             , DATE_FORMAT(orders_product.created_at, '%Y-%m-%d %H:%i') created_at
+             , orders_product.updated_at, orders_product.exp_date
              , stock_category.id stock_category_id, stock_category.category
              , stock_kind.id stock_kind_id, stock_kind.kind
              , stock_part.id stock_part_id, stock_part.part
@@ -110,7 +111,7 @@
              , orders_book.orders_product_id
              , orders_book.price
              , orders_book.avg_weight
-             , orders_book.created_at
+             , DATE_FORMAT(orders_book.created_at, '%Y-%m-%d %H:%i') created_at
              , orders_book.amount
              , IFNULL(orders_bids.bids_amount, 0) AS bid_amount
         from orders_book
@@ -137,7 +138,7 @@
              , orders_bid.orders_product_id, orders_bid.orders_book_id, orders_bid.seller_id, orders_bid.calculated_price, orders_bid.buyer_id
              , orders_bid.admins_id, orders_bid.status, orders_bid.product_status, orders_bid.cont_amount amount
              , IF(orders_bid.status = 'calculate', orders_bid.calculated_kg_price, orders_bid.cont_kg_price) price
-             , orders_bid.created_at
+             , DATE_FORMAT(orders_bid.created_at, '%Y-%m-%d %H:%i') created_at
              , IF(orders_bid.status = 'calculate', IFNULL(orders_bid.calculated_fee_price, 0), IFNULL(orders_bid.cont_fee_price, 0)) AS fee
              , IF(orders_bid.status = 'calculate', orders_bid.calculated_tot_weight, orders_bid.cont_tot_weight) total_weight
              , orders_book.avg_weight AS book_avg_weight
@@ -157,7 +158,8 @@
     </select>
 
     <select id="selectBuyBookInfo" resultType="hashMap">
-        select orders_book.id, orders_book.created_at
+        select orders_book.id
+             , DATE_FORMAT(orders_book.created_at, '%Y-%m-%d %H:%i') created_at
              , sk.kind, st.part, so.origin, sb.brand, se.est_no, sg.grade
              , spk.pack, orders_book.buy_hope_mon, orders_book.buy_hope_opt, orders_book.price, orders_book.amount
         from orders_book
@@ -193,7 +195,7 @@
              , IF(orders_bid.status = 'calculate', orders_bid.calculated_avg_weight, orders_bid.cont_avg_weight) avg_weight
              , IF(orders_bid.status = 'calculate', orders_bid.calculated_price, IF(buy_users.company_id = #{compId}, orders_bid.cont_price + ROUND(orders_bid.cont_price * (orders_bid.extra_charge_rate/100)), orders_bid.cont_price)) tot_price
              , IF(orders_bid.status = 'calculate', orders_bid.calculated_fee_price, orders_bid.cont_fee_price) fee_price
-             , orders_bid.created_at
+             , DATE_FORMAT(orders_bid.created_at, '%Y-%m-%d %H:%i') created_at
              , orders_bid.status, IF(buy_users.company_id = #{compId}, 'buy', 'sell') type
         from orders_bid
             join users as buy_users on buy_users.id = orders_bid.buyer_id
@@ -227,7 +229,7 @@
         order by stock_warehouse.name
     </select>
 
-    <insert id="insertBuyBook" parameterType="kr.co.meatmatch.dto.BuyBookInsertDto" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertBuyBook" parameterType="kr.co.meatmatch.dto.order.BuyBookInsertDto" useGeneratedKeys="true" keyProperty="id">
         insert into orders_book(users_id, stock_product_id, stock_pack_id, type, status
                                 , amount, price, avg_weight, min_sale_amount, buy_hope_mon, buy_hope_opt
                                 , created_at, updated_at)
@@ -249,7 +251,8 @@
     <select id="selectMyReadyForSellProductList" resultType="hashMap">
         select orders_product.id, orders_product.status, orders_product.stock_product_id
             , orders_product.amount - IFNULL(o_amount.order_amount, 0) - IFNULL(d_amount.done_amount, 0) AS amount
-            , orders_product.avg_weight, orders_product.exp_date, orders_product.created_at
+            , orders_product.avg_weight, orders_product.exp_date
+            , DATE_FORMAT(orders_product.created_at, '%Y-%m-%d %H:%i') created_at
             , orders_product.prod_date
             , orders_product.stock_pack_id
             , stock_category.id AS stock_category_id, stock_category.category
@@ -347,7 +350,7 @@
         where orders_product.id = #{ordersProductId}
     </select>
 
-    <insert id="insertSellBook" parameterType="kr.co.meatmatch.dto.SellBookInsertDto" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertSellBook" parameterType="kr.co.meatmatch.dto.order.SellBookInsertDto" useGeneratedKeys="true" keyProperty="id">
         insert into orders_book(users_id, stock_product_id, orders_product_id, stock_pack_id, type, status
                                 , amount, price, avg_weight, min_sale_amount, buy_hope_mon, buy_hope_opt, exp_date
                                 , created_at, updated_at)
@@ -388,7 +391,7 @@
         </if>
     </select>
 
-    <insert id="insertBid" parameterType="kr.co.meatmatch.dto.OrdersBidInsertDto" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertBid" parameterType="kr.co.meatmatch.dto.order.OrdersBidInsertDto" useGeneratedKeys="true" keyProperty="id">
         insert into orders_bid(stock_product_id, orders_product_id, orders_book_id, seller_id, buyer_id, extra_charge_rate
                             , cont_tot_weight, cont_amount, cont_kg_price, cont_price, cont_avg_weight, cont_fee_price
                             , cont_fee_unit_price, cont_fee_unit, status, conclusion_at)
@@ -552,7 +555,7 @@
         group by orders_book.id
     </select>
 
-    <insert id="insertOrdersProduct" parameterType="kr.co.meatmatch.dto.OrdersProductInsertDto" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertOrdersProduct" parameterType="kr.co.meatmatch.dto.order.OrdersProductInsertDto" useGeneratedKeys="true" keyProperty="id">
         insert into orders_product(users_id, parents_id, status, stock_product_id, stock_warehouse_id, stock_pack_id
                                   , amount, avg_weight, circulration_history_num, bl_num, management_num, prod_date, exp_date
                                   , origin_report1, origin_report2, origin_report3, origin_report4, origin_report5

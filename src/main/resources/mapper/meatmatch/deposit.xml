@@ -49,4 +49,75 @@
           and orders_bid.status='done'
           and orders_bid.is_temporary='N'
     </select>
+
+    <select id="selectDepositHistory" resultType="hashMap">
+        select *
+        from (
+                 select A.company_id, A.orders_bid_id, A.type
+                      , sum(A.total_amount) total_amount, sum(A.amount) amount, sum(A.fee) fee
+                      , '-' bank_name, '-' account_name, '-' account
+                      , DATE_FORMAT(max(A.created_at), '%Y-%m-%d %H:%i') created_at
+                 from (
+                          select company_id, orders_bid_id
+                               , case when type in ('presell', 'calcsell', 'preservselloffset', 'preservsell') then 'sell'
+                                      when type in ('prebuy', 'calcbuy', 'preservbuyoffset', 'preservbuy') then 'buy'
+                                      else type end type
+                               , case when type in ('preservsell', 'preservbuyoffset') then total_amount*(-1)
+                                      else total_amount end total_amount
+                               , case when type in ('preservsell', 'preservbuyoffset') then amount*(-1)
+                                      else amount end amount
+                               , IFNULL(fee, 0) fee, created_at
+                          from deposit_list
+                          where company_id = #{compId}
+                            and deleted_at is null
+                            and type in ('presell', 'calcsell', 'preservselloffset', 'preservsell', 'prebuy', 'calcbuy', 'preservbuyoffset', 'preservbuy')
+                          order by created_at desc
+                      ) as A
+                 group by company_id, orders_bid_id, type
+                 union all
+                 select company_id, 0 orders_bid_id, type, total_amount, amount, fee
+                      , deposit_list.bank_name, deposit_list.acount_name account_name
+                      , IFNULL(deposit_list.account, '계좌 정보 없음') account, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') created_at
+                 from deposit_list
+                 where company_id = #{compId}
+                   and deleted_at is null
+                   and type in ('withdraw', 'deposit')
+             ) A
+        where 1 = 1
+        <if test='type != null and !type.equals("")'>
+            <if test='type.equals("all")'>
+                and type in ('deposit', 'withdraw', 'buy', 'sell')
+            </if>
+            <if test='!type.equals("all")'>
+                and type = #{type}
+            </if>
+        </if>
+        <if test='date != null and !date.equals("") and !date.equals("all")'>
+          and created_at between #{sDate} and #{eDate}
+        </if>
+        order by created_at desc
+    </select>
+
+    <select id="getSellBuyDetail" resultType="hashMap">
+        select type, total_amount, amount, IFNULL(fee, 0) fee, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') created_at
+        from deposit_list
+        where deposit_list.company_id = #{compId}
+          and orders_bid_id = #{bidId}
+    </select>
+    
+    <select id="getDepositTotal" resultType="hashMap">
+        select IFNULL(SUM(total_amount), 0) amount
+        from deposit_list
+        where company_id = #{compId}
+          and type in ('deposit', 'presell', 'calcsell', 'preservbuyoffset', 'preservselloffset')
+          and deleted_at is null
+    </select>
+
+    <select id="getWithdrawTotal" resultType="hashMap">
+        select IFNULL(SUM(total_amount), 0) amount
+        from deposit_list
+        where company_id = #{compId}
+          and type in ('withdraw', 'prebuy', 'calcbuy', 'preservbuy', 'preservsell')
+          and deleted_at is null
+    </select>
 </mapper>

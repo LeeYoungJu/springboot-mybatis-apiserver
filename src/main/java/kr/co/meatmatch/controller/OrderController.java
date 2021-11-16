@@ -4,10 +4,11 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import kr.co.meatmatch.common.constants.PATH;
 import kr.co.meatmatch.common.dto.ResponseDto;
-import kr.co.meatmatch.dto.*;
+import kr.co.meatmatch.dto.order.*;
 import kr.co.meatmatch.dto.paging.PagingResultDto;
 import kr.co.meatmatch.service.OrderService;
 import kr.co.meatmatch.util.CommonFunc;
+import kr.co.meatmatch.util.PagingUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -115,16 +116,12 @@ public class OrderController {
     @GetMapping("/user-sell-information/total")
     public ResponseEntity<ResponseDto> selectMyReadyForSellProductList(@RequestHeader(name = "Authorization") String token
                                                                  , @ModelAttribute MyReadyProductSearchDto requestDto) throws Exception {
-        requestDto.initPage(PAGE_SIZE);
-        PageHelper.startPage(requestDto);
-
+        PagingUtil.init(requestDto, PAGE_SIZE);
         List<HashMap<String, Object>> list = orderService.selectMyReadyForSellProductList(
                 requestDto,
                 CommonFunc.removeBearerFromToken(token)
         );
-        PageInfo<HashMap<String, Object>> pageInfo = PageInfo.of(list);
-
-        PagingResultDto pagingResultDto = new PagingResultDto(list, pageInfo);
+        PagingResultDto pagingResultDto = PagingUtil.of(list);
 
         return ResponseDto.ok(pagingResultDto);
     }

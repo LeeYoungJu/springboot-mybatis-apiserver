@@ -55,7 +55,7 @@
           and deleted_at is null
     </select>
 
-    <insert id="insertCompany" parameterType="kr.co.meatmatch.dto.RegisterDto" useGeneratedKeys="true" keyProperty="companyId">
+    <insert id="insertCompany" parameterType="kr.co.meatmatch.dto.auth.RegisterDto" useGeneratedKeys="true" keyProperty="companyId">
         insert into company(company, registration_num, `condition`, sectors, name, addr, business_license
             , meet_coc_report, meet_coc_report_2, meet_coc_report_3, meet_coc_report_4, meet_coc_report_5
             , livestock_coc_report, livestock_coc_report_2, livestock_coc_report_3, livestock_coc_report_4, livestock_coc_report_5
@@ -68,7 +68,7 @@
         )
     </insert>
 
-    <insert id="insertUser" parameterType="kr.co.meatmatch.dto.RegisterDto">
+    <insert id="insertUser" parameterType="kr.co.meatmatch.dto.auth.RegisterDto">
         insert into users(auth_id, password, name, email, phone, type, is_approved, company_id, created_at, updated_at)
         values(#{auth_id}, #{password}, #{name}, #{email}, #{phone}, 'master', 'N', #{companyId}, now(), now())
     </insert>

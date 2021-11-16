@@ -7,7 +7,7 @@ import kr.co.meatmatch.common.exception.DuplicatedAuthDataException;
 import kr.co.meatmatch.common.exception.InvalidDataException;
 import kr.co.meatmatch.common.exception.UserNotFoundException;
 import kr.co.meatmatch.common.exception.InvalidLengthException;
-import kr.co.meatmatch.dto.RegisterDto;
+import kr.co.meatmatch.dto.auth.RegisterDto;
 import kr.co.meatmatch.service.AuthService;
 import kr.co.meatmatch.util.CommonFunc;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package kr.co.meatmatch.mapper.meatmatch;
 
-import kr.co.meatmatch.dto.MarketPriceSearchDto;
+import kr.co.meatmatch.dto.stock.MarketPriceSearchDto;
 import kr.co.meatmatch.dto.stock.StockProductInsertDto;
 import org.apache.ibatis.annotations.Mapper;
 

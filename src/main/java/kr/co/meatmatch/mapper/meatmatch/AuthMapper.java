@@ -1,8 +1,7 @@
 package kr.co.meatmatch.mapper.meatmatch;
 
-import kr.co.meatmatch.dto.RegisterDto;
+import kr.co.meatmatch.dto.auth.RegisterDto;
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;

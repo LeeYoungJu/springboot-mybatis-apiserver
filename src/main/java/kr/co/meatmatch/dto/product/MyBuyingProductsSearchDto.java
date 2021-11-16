@@ -6,6 +6,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RequestProductSearchDto extends BasicPageDto {
+public class MyBuyingProductsSearchDto extends BasicPageDto {
     protected int compId;
 }

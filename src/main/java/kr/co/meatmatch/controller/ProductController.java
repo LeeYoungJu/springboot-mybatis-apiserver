@@ -4,13 +4,11 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import kr.co.meatmatch.common.constants.PATH;
 import kr.co.meatmatch.common.dto.ResponseDto;
-import kr.co.meatmatch.dto.*;
 import kr.co.meatmatch.dto.paging.PagingResultDto;
-import kr.co.meatmatch.dto.product.ProductRegisterDto;
-import kr.co.meatmatch.dto.product.ProductsInWarehouseSearchDto;
-import kr.co.meatmatch.dto.product.RequestProductSearchDto;
+import kr.co.meatmatch.dto.product.*;
 import kr.co.meatmatch.service.ProductService;
 import kr.co.meatmatch.util.CommonFunc;
+import kr.co.meatmatch.util.PagingUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -35,13 +33,10 @@ public class ProductController {
     @GetMapping("/my")
     public ResponseEntity<ResponseDto> selectMyProducts(@RequestHeader(name = "Authorization") String token
                                                         , @Valid @ModelAttribute MyProductsSearchDto requestDto) throws Exception {
-        requestDto.initPage(PAGE_SIZE);
-        PageHelper.startPage(requestDto);
-
+        PagingUtil.init(requestDto, PAGE_SIZE);
         List<HashMap<String, Object>> list = productService.selectMyProducts(requestDto, CommonFunc.removeBearerFromToken(token));
-        PageInfo<HashMap<String, Object>> pageInfo = PageInfo.of(list);
+        PagingResultDto pagingResultDto = PagingUtil.of(list);
 
-        PagingResultDto pagingResultDto = new PagingResultDto(list, pageInfo);
         HashMap<String, Object> resMap = new HashMap<>();
         resMap.put("myList", pagingResultDto);
 
@@ -51,13 +46,9 @@ public class ProductController {
     @GetMapping("/product-trade/sell")
     public ResponseEntity<ResponseDto> selectSellingProducts(@RequestHeader(name = "Authorization") String token
                                                              , @ModelAttribute MySellingProductsSearchDto requestDto) throws Exception {
-        requestDto.initPage(PAGE_SIZE);
-        PageHelper.startPage(requestDto);
-
+        PagingUtil.init(requestDto, PAGE_SIZE);
         List<HashMap<String, Object>> list = productService.selectSellingProducts(requestDto, CommonFunc.removeBearerFromToken(token));
-        PageInfo<HashMap<String, Object>> pageInfo = PageInfo.of(list);
-
-        PagingResultDto pagingResultDto = new PagingResultDto(list, pageInfo);
+        PagingResultDto pagingResultDto = PagingUtil.of(list);
 
         return ResponseDto.ok(pagingResultDto);
     }
@@ -65,13 +56,9 @@ public class ProductController {
     @GetMapping("/product-trade/buy")
     public ResponseEntity<ResponseDto> selectBuyingProducts(@RequestHeader(name = "Authorization") String token
                                                             , @ModelAttribute MyBuyingProductsSearchDto requestDto) throws Exception {
-        requestDto.initPage(PAGE_SIZE);
-        PageHelper.startPage(requestDto);
-
+        PagingUtil.init(requestDto, PAGE_SIZE);
         List<HashMap<String, Object>> list = productService.selectBuyingProducts(requestDto, CommonFunc.removeBearerFromToken(token));
-        PageInfo<HashMap<String, Object>> pageInfo = PageInfo.of(list);
-
-        PagingResultDto pagingResultDto = new PagingResultDto(list, pageInfo);
+        PagingResultDto pagingResultDto = PagingUtil.of(list);
 
         return ResponseDto.ok(pagingResultDto);
     }
@@ -92,11 +79,9 @@ public class ProductController {
         List<HashMap<String, Object>> calcInfo = productService.selectCalculateInfo(calcDto, CommonFunc.removeBearerFromToken(token));
         resMap.put("calculateInfo", calcInfo);
 
-        listDto.initPage(PAGE_SIZE);
-        PageHelper.startPage(listDto);
+        PagingUtil.init(listDto, PAGE_SIZE);
         List<HashMap<String, Object>> list = productService.selectCompletedTradeList(listDto, CommonFunc.removeBearerFromToken(token));
-        PageInfo<HashMap<String, Object>> pageInfo = PageInfo.of(list);
-        PagingResultDto pagingResultDto = new PagingResultDto(list, pageInfo);
+        PagingResultDto pagingResultDto = PagingUtil.of(list);
         resMap.put("completeTradeList", pagingResultDto);
 
         return ResponseDto.ok(resMap);
@@ -145,13 +130,10 @@ public class ProductController {
     @GetMapping("/search")
     public ResponseEntity<ResponseDto> selectProductListInWarehouse(@RequestHeader(name = "Authorization") String token
                                                                     , @ModelAttribute ProductsInWarehouseSearchDto requestDto) throws Exception {
-        requestDto.initPage(PAGE_SIZE);
-        PageHelper.startPage(requestDto);
-
+        PagingUtil.init(requestDto, PAGE_SIZE);
         List<HashMap<String, Object>> list = productService.selectProductListInWarehouse(requestDto, CommonFunc.removeBearerFromToken(token));
-        PageInfo<HashMap<String, Object>> pageInfo = PageInfo.of(list);
+        PagingResultDto pagingResultDto = PagingUtil.of(list);
 
-        PagingResultDto pagingResultDto = new PagingResultDto(list, pageInfo);
         HashMap<String, Object> resMap = new HashMap<>();
         resMap.put("data", pagingResultDto);
 
@@ -161,13 +143,9 @@ public class ProductController {
     @GetMapping("/my-request")
     public ResponseEntity<ResponseDto> selectRequestProductList(@RequestHeader(name = "Authorization") String token
                                                                 , @ModelAttribute RequestProductSearchDto requestDto) throws Exception {
-        requestDto.initPage(PAGE_SIZE);
-        PageHelper.startPage(requestDto);
-
+        PagingUtil.init(requestDto, PAGE_SIZE);
         List<HashMap<String, Object>> list = productService.selectRequestProductList(requestDto, CommonFunc.removeBearerFromToken(token));
-        PageInfo<HashMap<String, Object>> pageInfo = PageInfo.of(list);
-
-        PagingResultDto pagingResultDto = new PagingResultDto(list, pageInfo);
+        PagingResultDto pagingResultDto = PagingUtil.of(list);
 
         return ResponseDto.ok(pagingResultDto);
     }

@@ -1,18 +1,14 @@
 package kr.co.meatmatch.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.auth.oauth2.GoogleCredentials;
-import kr.co.meatmatch.dto.FcmMessage;
+import kr.co.meatmatch.dto.fcm.FcmMessage;
 import lombok.RequiredArgsConstructor;
 import okhttp3.*;
-import org.codehaus.jackson.JsonProcessingException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 

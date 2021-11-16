@@ -1,8 +1,6 @@
 package kr.co.meatmatch.mapper.meatmatch;
 
-import kr.co.meatmatch.dto.*;
-import kr.co.meatmatch.dto.product.ProductsInWarehouseSearchDto;
-import kr.co.meatmatch.dto.product.RequestProductSearchDto;
+import kr.co.meatmatch.dto.product.*;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.HashMap;

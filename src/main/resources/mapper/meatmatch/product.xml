@@ -5,7 +5,9 @@
     <select id="selectMyProducts" resultType="hashMap">
         select orders_product.id, 'product' AS type, orders_product.status, orders_product.stock_product_id
              , orders_product.stock_warehouse_id, orders_product.avg_weight
-             , orders_product.prod_date, orders_product.created_at, orders_product.exp_date, orders_product.bl_num
+             , orders_product.prod_date
+             , DATE_FORMAT(orders_product.created_at, '%Y-%m-%d %H:%i') created_at
+             , orders_product.exp_date, orders_product.bl_num
              , stock_product.stock_est_id
              , stock_est.est_no
              , stock_warehouse.name warehouse, stock_warehouse.first_address
@@ -66,7 +68,8 @@
 
     <select id="selectSellingProducts" resultType="hashMap">
         select orders_book.id, orders_book.type, orders_book.stock_product_id, orders_book.status
-             , orders_book.amount, orders_book.min_sale_amount, orders_book.price, orders_book.avg_weight, orders_book.created_at
+             , orders_book.amount, orders_book.min_sale_amount, orders_book.price, orders_book.avg_weight
+             , DATE_FORMAT(orders_book.created_at, '%Y-%m-%d %H:%i') created_at
              , orders_book.amount - SUM(IFNULL(orders_bid.cont_amount, 0)) as remain_amount
              , stock_category.id stock_category_id, stock_category.category
              , stock_kind.id stock_kind_id, stock_kind.kind
@@ -115,7 +118,8 @@
     
     <select id="selectBuyingProducts" resultType="hashMap">
          select orders_book.id, orders_book.type, orders_book.stock_product_id, orders_book.status
-              , orders_book.amount, orders_book.price, orders_book.avg_weight, orders_book.created_at
+              , orders_book.amount, orders_book.price, orders_book.avg_weight
+              , DATE_FORMAT(orders_book.created_at, '%Y-%m-%d %H:%i') created_at
               , orders_book.amount - SUM(IFNULL(orders_bid.cont_amount, 0)) as remain_amount
               , stock_category.id stock_category_id, stock_category.category
               , stock_kind.id stock_kind_id, stock_kind.kind, stock_part.id stock_part_id, stock_part.part
@@ -198,7 +202,9 @@
     </select>
     
     <select id="selectCompletedTradeList" resultType="hashMap">
-        select *
+        select id, status
+             , DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') created_at
+             , part, amount, avg_weight, type
         from (
             select orders_bid.id, orders_bid.status
                  , IF(orders_bid.status = 'calculate', orders_bid.calculated_at, orders_bid.conclusion_at) created_at
@@ -281,7 +287,8 @@
     </select>
 
     <select id="getRecentTradePrice" resultType="hashMap">
-        select IF(status='calculate', calculated_kg_price, cont_kg_price) as price, created_at
+        select IF(status='calculate', calculated_kg_price, cont_kg_price) as price
+             , DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') created_at
         from orders_bid
         where stock_product_id = #{stockProductId}
           and status in ('done','calculate')
@@ -438,19 +445,19 @@
           and stock_product_id = #{stockProductId}
     </select>
 
-    <update id="setProductConcernDeletedAt" parameterType="kr.co.meatmatch.dto.ProductConcernDto">
+    <update id="setProductConcernDeletedAt" parameterType="kr.co.meatmatch.dto.product.ProductConcernDto">
         update product_concern set deleted_at = now()
         where users_id = #{userId}
           and stock_product_id = #{stockProductId}
     </update>
 
-    <update id="setProductConcernDeletedAtNull" parameterType="kr.co.meatmatch.dto.ProductConcernDto">
+    <update id="setProductConcernDeletedAtNull" parameterType="kr.co.meatmatch.dto.product.ProductConcernDto">
         update product_concern set deleted_at = null
         where users_id = #{userId}
           and stock_product_id = #{stockProductId}
     </update>
     
-    <insert id="insertProductConcern" parameterType="kr.co.meatmatch.dto.ProductConcernDto" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertProductConcern" parameterType="kr.co.meatmatch.dto.product.ProductConcernDto" useGeneratedKeys="true" keyProperty="id">
         insert into product_concern(users_id, stock_product_id, created_at, updated_at)
         values(#{userId}, #{stockProductId}, now(), now())
     </insert>
@@ -475,7 +482,7 @@
         where id = #{id}
     </update>
 
-    <insert id="insertProductAlarm" parameterType="kr.co.meatmatch.dto.ProductAlarmDto" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertProductAlarm" parameterType="kr.co.meatmatch.dto.product.ProductAlarmDto" useGeneratedKeys="true" keyProperty="id">
         insert into product_alarm(users_id, status, stock_product_id, alarm_price, action)
         values(#{user_id}, #{status}, #{stock_product_id}, #{alarm_price}, 'N')
     </insert>
@@ -491,7 +498,8 @@
             , nw.mst_key, nw.st_qty, nw.st_kg, nw.unit_kg
             , stock_warehouse.id stock_warehouse_id, stock_warehouse.name warehouse_name, stock_warehouse.first_address
             , case when orders_product.status is null or orders_product.status = 'cancel' then 'N' else 'Y' end reg_yn
-            , nw.pmst_seq, nw.created_at
+            , nw.pmst_seq
+            , DATE_FORMAT(nw.created_at, '%Y-%m-%d %H:%i') created_at
         from tb_nwill_product_stock as nw
             join company on nw.comp_reg_num = company.registration_num
             left join stock_warehouse on nw.scode = stock_warehouse.nw_scode

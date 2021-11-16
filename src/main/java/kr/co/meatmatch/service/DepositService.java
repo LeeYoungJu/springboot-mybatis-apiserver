@@ -1,5 +1,6 @@
 package kr.co.meatmatch.service;
 
+import kr.co.meatmatch.dto.deposit.DepositHistorySearchDto;
 import kr.co.meatmatch.mapper.meatmatch.DepositMapper;
 import kr.co.meatmatch.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,9 @@ public class DepositService {
         }
         return totalProp;
     }
+    public int getTotalProp(String token) throws Exception {
+        return this.getTotalProp(authService.getCompIdByToken(token));
+    }
     public int getBookBuyPrice(int compId) throws Exception {
         double bookPrice = 0.0;
         List<HashMap<String, Object>> bookList = depositMapper.getBookBuyPrice(compId);
@@ -42,6 +46,9 @@ public class DepositService {
     public int getUnsolvedProp(int compId) throws Exception {
         return this.getBookBuyPrice(compId) + this.getBidBuyPrice(compId);
     }
+    public int getUnsolvedProp(String token) throws Exception {
+        return this.getUnsolvedProp(authService.getCompIdByToken(token));
+    }
 
     public HashMap<String, Object> getReserve(String token) throws Exception {
         int compId = authService.getCompIdByToken(token);
@@ -51,6 +58,32 @@ public class DepositService {
 
         HashMap<String, Object> resMap = new HashMap<>();
         resMap.put("reserves", totalProp - unsolvedProp);
+
+        return resMap;
+    }
+
+    public List<HashMap<String, Object>> selectDepositHistory(DepositHistorySearchDto depositHistorySearchDto, String token) throws Exception {
+        depositHistorySearchDto.setCompId(authService.getCompIdByToken(token));
+        return depositMapper.selectDepositHistory(depositHistorySearchDto);
+    }
+
+    public HashMap<String, Object> getSellBuyDetail(int bidId, String token) throws Exception {
+        int compId = authService.getCompIdByToken(token);
+        List<HashMap<String, Object>> list = depositMapper.getSellBuyDetail(bidId, compId);
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("detailList", list);
+        return resMap;
+    }
+
+    public HashMap<String, Object> getDepositDetail(String token) throws Exception {
+        int compId = authService.getCompIdByToken(token);
+        HashMap<String, Object> DepositTotal = depositMapper.getDepositTotal(compId).get(0);
+        HashMap<String, Object> WithdrawTotal = depositMapper.getWithdrawTotal(compId).get(0);
+
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("total_deposit", Integer.parseInt(DepositTotal.get("amount").toString()));
+        resMap.put("total_withdraw", Integer.parseInt(WithdrawTotal.get("amount").toString()));
+        resMap.put("total_sum", Integer.parseInt(DepositTotal.get("amount").toString()) - Integer.parseInt(WithdrawTotal.get("amount").toString()));
 
         return resMap;
     }
