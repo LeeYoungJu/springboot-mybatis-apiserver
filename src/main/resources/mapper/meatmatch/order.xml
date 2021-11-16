@@ -2,6 +2,49 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="kr.co.meatmatch.mapper.meatmatch.OrderMapper">
+    <select id="getOrdersProductById" resultType="hashMap">
+        select *
+        from orders_product
+        where id = #{productId}
+    </select>
+
+    <select id="getOrdersBookById" resultType="hashMap">
+        select *
+        from orders_book
+        where id = #{bookId}
+    </select>
+
+    <select id="getOrdersBidById" resultType="hashMap">
+        select *
+        from orders_bid
+        where id = #{bidId}
+    </select>
+
+    <update id="updateOrdersProductStatus">
+        update orders_product set status = #{status}
+        where id = #{productId}
+    </update>
+
+    <update id="updateOrdersBookStatus">
+        update orders_book set status = #{status}
+        where id = #{bookId}
+    </update>
+
+    <update id="updateOrdersBidStatus">
+        update orders_bid set status = #{status}
+        where id = #{bidId}
+    </update>
+
+    <update id="updateOrdersProductCanceledAt">
+        update orders_product set canceled_at = now()
+        where id = #{productId}
+    </update>
+
+    <update id="updateOrdersBookCanceledAt">
+        update orders_book set canceled_at = now()
+        where id = ${bookId}
+    </update>
+
     <select id="selectOrdersProductInfo" resultType="hashMap">
         select orders_product.id as orders_product_id
              , orders_product.parents_id, orders_product.status, orders_product.stock_product_id
@@ -170,4 +213,355 @@
             join stock_warehouse on orders_product.stock_warehouse_id = stock_warehouse.id
         where orders_bid.id = #{orders_bid_id}
     </select>
+    
+    <select id="getOrdersWarehouseByProductId" resultType="hashMap">
+        select distinct id, name, first_address
+        from stock_warehouse
+            join (
+                select orders_warehouse.stock_warehouse_id
+                from orders_warehouse
+                    join orders_book on orders_book.id = orders_warehouse.orders_book_id
+                where orders_book.stock_product_id = #{stockProductId}
+                  and orders_book.status = 'order'
+            ) as warehouse on warehouse.stock_warehouse_id = stock_warehouse.id
+        order by stock_warehouse.name
+    </select>
+
+    <insert id="insertBuyBook" parameterType="kr.co.meatmatch.dto.BuyBookInsertDto" useGeneratedKeys="true" keyProperty="id">
+        insert into orders_book(users_id, stock_product_id, stock_pack_id, type, status
+                                , amount, price, avg_weight, min_sale_amount, buy_hope_mon, buy_hope_opt
+                                , created_at, updated_at)
+        values(#{users_id}, #{stock_product_id}, #{stock_pack_id}, 'buy', 'order'
+                , #{amount}, #{price}, #{avg_weight}, #{min_sale_amount}, #{buy_hope_mon}, #{buy_hope_opt}
+                , now(), now())
+    </insert>
+    
+    <insert id="insertOrdersWarehouse" parameterType="hashMap">
+        insert into orders_warehouse(orders_book_id, stock_warehouse_id, created_at, updated_at)
+        values(#{orders_book_id}, #{stock_warehouse_id}, now(), now())
+    </insert>
+
+    <insert id="insertOrdersEst" parameterType="hashMap">
+        insert into orders_est(orders_book_id, stock_est_id, created_at, updated_at)
+        values(#{orders_book_id}, #{stock_est_id}, now(), now())
+    </insert>
+    
+    <select id="selectMyReadyForSellProductList" resultType="hashMap">
+        select orders_product.id, orders_product.status, orders_product.stock_product_id
+            , orders_product.amount - IFNULL(o_amount.order_amount, 0) - IFNULL(d_amount.done_amount, 0) AS amount
+            , orders_product.avg_weight, orders_product.exp_date, orders_product.created_at
+            , orders_product.prod_date
+            , orders_product.stock_pack_id
+            , stock_category.id AS stock_category_id, stock_category.category
+            , stock_kind.id AS stock_kind_id, stock_kind.kind
+            , stock_part.id AS stock_part_id, stock_part.part
+            , stock_origin.id AS stock_origin_id, stock_origin.origin
+            , stock_brand.id AS stock_brand_id, stock_brand.brand
+            , stock_grade.id AS stock_grade_id, stock_grade.grade
+            , IFNULL(MAX(cur_price.price), 0) AS price
+            , stock_pack.pack
+            , stock_keep.keep
+            , stock_product.stock_est_id
+            , stock_est.est_no
+            , orders_product.stock_warehouse_id
+            , orders_product.bl_num
+            , stock_warehouse.name AS warehouse_name
+            , stock_warehouse.first_address AS warehouse_first_address
+        from orders_product
+            join users on users.id = orders_product.users_id
+            join stock_product on orders_product.stock_product_id = stock_product.id
+            join stock_category on stock_product.stock_category_id = stock_category.id
+            join stock_kind on stock_product.stock_kind_id = stock_kind.id
+            join stock_part on stock_product.stock_part_id = stock_part.id
+            join stock_origin on stock_product.stock_origin_id = stock_origin.id
+            join stock_brand on stock_product.stock_brand_id = stock_brand.id
+            join stock_grade on stock_product.stock_grade_id = stock_grade.id
+            join stock_keep on stock_product.stock_keep_id = stock_keep.id
+            join stock_est on stock_product.stock_est_id = stock_est.id
+            join stock_warehouse on orders_product.stock_warehouse_id = stock_warehouse.id
+            join stock_pack on orders_product.stock_pack_id = stock_pack.id
+            left join (
+                select orders_product_id, SUM(amount) order_amount
+                from orders_book
+                where status = 'order'
+                  and type = 'sell'
+                group by orders_product_id
+            ) as o_amount on orders_product.id = o_amount.orders_product_id
+            left join (
+                select orders_bid.orders_product_id, SUM(orders_bid.cont_amount) done_amount
+                from orders_bid
+                         join orders_book on orders_bid.orders_book_id = orders_book.id
+                where (orders_book.status = 'done'
+                    and orders_bid.status in ('done', 'calculate')
+                    ) or (
+                            orders_book.type = 'buy'
+                        and orders_bid.status in ('done', 'calculate')
+                    )
+                group by orders_bid.orders_product_id
+            ) as d_amount on orders_product.id = d_amount.orders_product_id
+            left join (
+                select ob1.stock_product_id, ob1.cont_kg_price price
+                from orders_bid ob1
+                         join (
+                    select MAX(created_at) created_at
+                    from orders_bid
+                    where status in ('calculate', 'done')
+                    group by stock_product_id
+                ) ob2 on ob1.created_at = ob2.created_at
+            ) as cur_price on orders_product.stock_product_id = cur_price.stock_product_id
+        where users.company_id = #{compId}
+          and orders_product.status = 'ready'
+        <if test='stock_product_id != null and stock_product_id > 0'>
+            and orders_product.stock_product_id = #{stock_product_id}
+        </if>
+        <if test='stock_warehouse_id != null and !stock_warehouse_id.equals("")'>
+            and orders_product.stock_warehouse_id in (${stock_warehouse_id})
+        </if>
+        group by orders_product.id
+        order by orders_product.created_at desc
+    </select>
+    
+    <select id="getReadyForSellProductAmount" resultType="hashMap">
+        select IFNULL(orders_product.amount, 0) - IFNULL(oa.order_amount, 0) - IFNULL(da.done_amount, 0) amount
+        from orders_product
+                 left join (
+            select orders_product_id, SUM(amount) order_amount
+            from orders_book
+            where status = 'order'
+              and type = 'sell'
+              and orders_product_id = #{ordersProductId}
+        ) as oa on orders_product.id = oa.orders_product_id
+                 left join (
+            select orders_bid.orders_product_id, SUM(orders_bid.cont_amount) done_amount
+            from orders_bid
+                     join orders_book on orders_bid.orders_book_id = orders_book.id
+            where (
+                        orders_book.status = 'done'
+                    and orders_bid.status in ('done', 'calculate')
+                ) or (
+                        orders_book.type = 'buy'
+                    and orders_bid.status in ('done', 'calculate')
+                )
+            group by orders_bid.orders_product_id
+        ) as da on orders_product.id = da.orders_product_id
+        where orders_product.id = #{ordersProductId}
+    </select>
+
+    <insert id="insertSellBook" parameterType="kr.co.meatmatch.dto.SellBookInsertDto" useGeneratedKeys="true" keyProperty="id">
+        insert into orders_book(users_id, stock_product_id, orders_product_id, stock_pack_id, type, status
+                                , amount, price, avg_weight, min_sale_amount, buy_hope_mon, buy_hope_opt, exp_date
+                                , created_at, updated_at)
+        values(#{userId}, #{stock_product_id}, #{orders_product_id}, #{stock_pack_id}, 'sell', 'order'
+              , #{amount}, #{price}, #{avg_weight}, #{min_sale_amount}, #{buy_hope_mon}, #{buy_hope_opt}, #{exp_date}
+              , now(), now())
+    </insert>
+
+    <select id="selectSellingProductsInBuyPage" resultType="hashMap">
+        select orders_book.id, orders_book.type
+            , orders_book.users_id, orders_book.stock_product_id, orders_book.orders_product_id
+            , orders_book.price, orders_book.avg_weight, orders_book.exp_date
+            , orders_book.stock_pack_id, orders_book.buy_hope_mon, orders_book.buy_hope_opt
+            , orders_book.min_sale_amount, orders_book.extra_charge_rate
+            , (orders_book.amount - IFNULL(bid_info.sum_amount, 0)) AS amount
+            , orders_est.stock_est_id, orders_warehouse.stock_warehouse_id
+            , orders_product.prod_date
+        from orders_book
+            join users on users.id = orders_book.users_id
+            left join (
+                select orders_book_id, IFNULL(SUM(cont_amount), 0) AS sum_amount
+                from orders_bid
+                where stock_product_id = #{stockProductId}
+                  and orders_bid.status in ('done', 'calculate')
+                group by orders_bid.orders_book_id
+            ) as bid_info on orders_book.id = bid_info.orders_book_id
+            join orders_product on orders_book.orders_product_id = orders_product.id
+            join stock_product on orders_book.stock_product_id = stock_product.id
+            join orders_est on orders_book.id = orders_est.orders_book_id
+            join orders_warehouse on orders_book.id = orders_warehouse.orders_book_id
+        where users.company_id != #{compId}
+          and orders_book.stock_product_id = #{stockProductId}
+          and orders_book.price = #{price}
+          and orders_book.type = 'sell'
+          and orders_book.status = 'order'
+        <if test='stockWarehouseIds != null and !stockWarehouseIds.equals("")'>
+            and orders_product.stock_warehouse_id in (${stockWarehouseIds})
+        </if>
+    </select>
+
+    <insert id="insertBid" parameterType="kr.co.meatmatch.dto.OrdersBidInsertDto" useGeneratedKeys="true" keyProperty="id">
+        insert into orders_bid(stock_product_id, orders_product_id, orders_book_id, seller_id, buyer_id, extra_charge_rate
+                            , cont_tot_weight, cont_amount, cont_kg_price, cont_price, cont_avg_weight, cont_fee_price
+                            , cont_fee_unit_price, cont_fee_unit, status, conclusion_at)
+        values(#{stock_product_id}, #{orders_product_id}, #{orders_book_id}, #{seller_id}, #{buyer_id}, #{extra_charge_rate}
+            , #{cont_tot_weight}, #{cont_amount}, #{cont_kg_price}, #{cont_price}, #{cont_avg_weight}, #{cont_fee_price}
+            , #{cont_fee_unit_price}, #{cont_fee_unit}, #{status}, now())
+    </insert>
+
+    <select id="checkOrdersBookAmount" resultType="hashMap">
+        select orders_book.type, IFNULL(orders_book.amount, 0) - SUM(IFNULL(orders_bid.cont_amount, 0)) amount
+        from orders_book
+                 left join orders_bid on orders_bid.orders_book_id = orders_book.id and orders_bid.status in ('done', 'calculate')
+        where orders_book.id = #{bookId}
+          and orders_book.status = 'order'
+        group by orders_book.id
+    </select>
+    
+    <select id="checkOrdersProductAmount" resultType="hashMap">
+        select IFNULL(orders_product.amount, 0) - IFNULL(oa.order_amount, 0) - IFNULL(da.done_amount, 0) amount
+        from orders_product
+                 left join (
+            select orders_product_id, SUM(amount) order_amount
+            from orders_book
+            where status in ('order', 'done')
+              and type = 'sell'
+              and orders_product_id = #{productId}
+              and canceled_at is null
+            group by orders_product_id
+        ) as oa on orders_product.id = oa.orders_product_id
+                 left join (
+            select orders_bid.orders_product_id, SUM(orders_bid.cont_amount) done_amount
+            from orders_bid
+                     join orders_book on orders_bid.orders_book_id = orders_book.id
+            where orders_bid.orders_product_id = #{productId}
+              and orders_bid.status in ('done', 'calculate')
+              and orders_book.status = 'done'
+              and orders_book.canceled_at is not null
+            group by orders_bid.orders_product_id
+        ) as da on orders_product.id = da.orders_product_id
+        where orders_product.id = #{productId}
+    </select>
+
+    <select id="selectBuyingProductsInSellPage" resultType="hashMap">
+        select a.id, a.type
+            , (a.amount - IFNULL(b.sum_amount, 0)) AS amount
+            , a.users_id, a.stock_product_id, a.orders_product_id
+            , stock_product.stock_est_id, sw.stock_warehouse_id
+            , a.price, a.avg_weight, a.exp_date
+            , a.min_sale_amount, a.stock_pack_id
+            , a.buy_hope_mon, a.buy_hope_opt, stock_pack.pack
+        from orders_book a
+        join users on users.id = a.users_id
+        join stock_product on stock_product.id = a.stock_product_id
+        left join stock_pack on stock_pack.id = a.stock_pack_id
+        left join (
+            select orders_book_id, IFNULL(SUM(cont_amount), 0) as sum_amount
+            from orders_bid ob
+            where ob.status != 'NG'
+            and stock_product_id = #{stockProductId}
+            and ob.deleted_at is null
+            GROUP BY ob.orders_book_id
+        ) b ON a.id = b.orders_book_id
+        left join orders_warehouse sw ON a.id = sw.orders_book_id
+        where a.stock_product_id = #{stockProductId}
+          and users.company_id != #{compId}
+          and a.price = #{price}
+          and a.type = 'buy'
+          and a.status='order'
+          and a.deleted_at is NULL
+        <if test='stockWarehouseIds != null and !stockWarehouseIds.equals("")'>
+            and sw.stock_warehouse_id in (${stockWarehouseIds})
+        </if>
+        order by sw.stock_warehouse_id DESC, a.created_at DESC
+    </select>
+
+    <select id="buySellMatching" resultType="hashMap">
+        select orders_product.id
+             , IFNULL(orders_product.amount, 0) - IFNULL(o_amount.order_amount, 0) - IFNULL(d_amount.done_amount, 0) amount
+             , orders_product.exp_date
+        from orders_product
+            join users on users.id = orders_product.users_id
+            join stock_product on orders_product.stock_product_id = stock_product.id
+            join stock_est on stock_product.stock_est_id = stock_est.id
+            join stock_warehouse on orders_product.stock_warehouse_id = stock_warehouse.id
+            left join (
+                select orders_product_id, SUM(amount) order_amount
+                from orders_book
+                where status = 'order'
+                  and type = 'sell'
+                  and stock_product_id = 1602
+                group by orders_product_id
+            ) as o_amount on orders_product.id = o_amount.orders_product_id
+            left join (
+                select orders_bid.orders_product_id, SUM(orders_bid.cont_amount) done_amount
+                from orders_bid
+                         join orders_book on orders_bid.orders_book_id = orders_book.id
+                where (
+                            orders_book.status = 'done'
+                        and orders_bid.status in ('done', 'calculate')
+                        and orders_bid.stock_product_id = #{stock_product_id}
+                    ) or (
+                            orders_book.type = 'buy'
+                        and orders_bid.status in ('done', 'calculate')
+                        and orders_bid.stock_product_id = #{stock_product_id}
+                    )
+                group by orders_bid.orders_product_id
+            ) as d_amount on orders_product.id = d_amount.orders_product_id
+        where users.company_id = #{comp_id}
+          and orders_product.status = 'ready'
+          and orders_product.stock_product_id = #{stock_product_id}
+          and stock_warehouse.id = #{stock_warehouse_id}
+        <if test='hope_opt != null and !hope_opt.equals("")'>
+            and orders_product.exp_date ${hope_opt} #{exp_date}
+        </if>
+        <if test='stock_pack_id != null and stock_pack_id > 0'>
+            and orders_product.stock_pack_id = #{stock_pack_id}
+        </if>
+        order by orders_product.created_at desc
+    </select>
+    
+    <select id="getTradeDoneByProductId" resultType="hashMap">
+        select *
+        from orders_bid
+        where orders_product_id = #{productId}
+          and orders_bid.status in ('done', 'calculate')
+    </select>
+    
+    <select id="getOrdersEstStr" resultType="hashMap">
+        select IFNULL(GROUP_CONCAT(DISTINCT stock_est_id SEPARATOR ','), '') AS ests
+        from orders_book
+            join orders_est on orders_book.id = orders_est.orders_book_id
+        where orders_book.id = ${bookId}
+    </select>
+
+    <select id="getOrdersWarehouseStr" resultType="hashMap">
+        select IFNULL(GROUP_CONCAT(DISTINCT stock_warehouse_id SEPARATOR ','), '') AS warehouses
+        from orders_book
+            join orders_warehouse on orders_book.id = orders_warehouse.orders_book_id
+        where orders_book.id = ${bookId}
+    </select>
+    
+    <select id="getTradeDoneAmount" resultType="hashMap">
+        select IFNULL(sum(orders_bid.cont_amount),0) as amount
+        from orders_bid
+        where orders_bid.orders_book_id = #{bookId}
+          and orders_bid.status in ('done', 'calculate')
+    </select>
+
+    <select id="getTradeDoneByBookId" resultType="hashMap">
+        select *
+        from orders_bid
+        where orders_bid.orders_book_id = #{bookId}
+          and orders_bid.status in ('done', 'calculate')
+    </select>
+
+    <select id="getBookRemainAmount" resultType="hashMap">
+        select orders_book.type, orders_book.orders_product_id, orders_book.amount - SUM(IFNULL(orders_bid.cont_amount, 0)) amount
+        from orders_book
+            left join orders_bid on orders_bid.orders_book_id = orders_book.id and orders_bid.status in ('done', 'calculate')
+        where orders_book.id = #{bookId}
+        group by orders_book.id
+    </select>
+
+    <insert id="insertOrdersProduct" parameterType="kr.co.meatmatch.dto.OrdersProductInsertDto" useGeneratedKeys="true" keyProperty="id">
+        insert into orders_product(users_id, parents_id, status, stock_product_id, stock_warehouse_id, stock_pack_id
+                                  , amount, avg_weight, circulration_history_num, bl_num, management_num, prod_date, exp_date
+                                  , origin_report1, origin_report2, origin_report3, origin_report4, origin_report5
+                                  , income_report1, income_report2, income_report3, income_report4, income_report5
+                                  , inventory1, inventory2, inventory3, inventory4, inventory5)
+        values(#{users_id}, #{parents_id}, #{status}, #{stock_product_id}, #{stock_warehouse_id}, #{stock_pack_id}
+              , #{amount}, #{avg_weight}, #{circulration_history_num}, #{bl_num}, #{management_num}, #{prod_date}, #{exp_date}
+              , #{origin_report1}, #{origin_report2}, #{origin_report3}, #{origin_report4}, #{origin_report5}
+              , #{income_report1}, #{income_report2}, #{income_report3}, #{income_report4}, #{income_report5}
+              , #{inventory1}, #{inventory2}, #{inventory3}, #{inventory4}, #{inventory5})
+    </insert>
 </mapper>

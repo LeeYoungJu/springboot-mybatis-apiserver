@@ -6,6 +6,9 @@ import lombok.Setter;
 
 import java.util.List;
 
+/*
+ *  기존 php 에서 페이징 처리 시 이런식으로 페이징 결과값을 넘겨주기 때문에 똑같이 만들었음
+ */
 @Getter
 @Setter
 public class PagingResultDto {

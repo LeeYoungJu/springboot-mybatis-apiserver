@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.meatmatch.mapper.meatmatch.DepositMapper">
+    <select id="getDepositInfo" resultType="hashMap">
+        select
+            SUM(case when type in ('deposit', 'presell', 'calcsell', 'preservbuyoffset', 'preservselloffset') then total_amount
+                     when type in ('withdraw', 'prebuy', 'calcbuy', 'preservbuy', 'preservsell') then total_amount * (-1)
+                     else 0 end) as totalProp,
+            SUM(case when type in ('prebuy', 'calcbuy', 'preservbuy') then total_amount
+                     when type in ('preservbuyoffset') then total_amount * (-1)
+                     else 0 end) as tot_buy,
+            SUM(case when type in ('presell', 'calcsell', 'preservselloffset') then total_amount
+                     when type in ('preservsell') then total_amount * (-1)
+                     else 0 end) as tot_sell,
+            SUM(case when type in ('prebuy') then 1
+                     else 0 end) as cnt_buy,
+            SUM(case when type in ('presell') then 1
+                     else 0 end) as cnt_sell
+        from deposit_list
+        where deleted_at is null
+          and company_id = #{compId}
+    </select>
+    
+    <select id="getBookBuyPrice" resultType="hashMap">
+        select SUM(
+                       ROUND(orders_book.price * orders_book.avg_weight * (orders_book.amount - IFNULL(bid.amount, 0)))
+                       + ROUND(orders_book.price * orders_book.avg_weight * (orders_book.amount - IFNULL(bid.amount, 0)) *(orders_book.extra_charge_rate/100))
+                   ) price
+        from orders_book
+                 join users on orders_book.users_id=users.id
+                 left join (
+            select orders_book_id, sum(cont_amount) amount
+            from orders_bid
+            where status in ('done', 'calculate')
+            group by orders_book_id
+        ) bid on orders_book.id = bid.orders_book_id
+        where users.company_id = #{compId}
+          and orders_book.type = 'buy'
+          and orders_book.status = 'order'
+          and orders_book.deleted_at is null
+    </select>
+    
+    <select id="getBidBuyPrice" resultType="hashMap">
+        select SUM(cont_price + ROUND(cont_price *(extra_charge_rate/100))) as price
+        from orders_bid
+                 join users on orders_bid.buyer_id=users.id
+        where users.company_id=#{compId}
+          and orders_bid.status='done'
+          and orders_bid.is_temporary='N'
+    </select>
+</mapper>

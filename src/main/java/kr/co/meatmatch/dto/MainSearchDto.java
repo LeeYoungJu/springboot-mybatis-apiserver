@@ -15,5 +15,5 @@ public class MainSearchDto extends BasicDto {
     protected String stock_brand_id;
     protected String stock_est_id;
     protected String stock_grade_id;
-    protected String userId;
+    protected int userId;
 }

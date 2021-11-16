@@ -24,8 +24,7 @@ public class MainPageService {
     }
 
     public HashMap<String, Object> selectMyInterests(MainSearchDto searchDto, String token) throws Exception {
-        HashMap<String, Object> User = authService.getMyUserByAuthId(jwtUtil.extractUsername(token));
-        searchDto.setUserId(User.get("id").toString());
+        searchDto.setUserId(authService.getUserIdByToken(token));
         List<HashMap<String, Object>> list = mainPageMapper.selectMyInterests(searchDto);
         HashMap<String, Object> resMap = new HashMap<>();
         resMap.put("data", list);

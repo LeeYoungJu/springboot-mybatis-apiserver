@@ -3,6 +3,9 @@ package kr.co.meatmatch.common.dto;
 import lombok.Getter;
 import org.springframework.http.ResponseEntity;
 
+/*
+ * 기존 php의 JSON 리턴값에 맞춰서 동일하게 리턴할 수 있도록 만들었음
+ */
 @Getter
 public class ResponseDto {
     private ResponseStatus status;

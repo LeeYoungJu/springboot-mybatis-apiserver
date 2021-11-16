@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.meatmatch.mapper.meatmatch.FcmMapper">
+    <select id="getPushInfoByToken" resultType="hashMap">
+        select *
+        from pickup_customer_push_info
+        where deleted_at is null
+          and firebase_token = #{firebaseToken}
+    </select>
+
+    <insert id="insertFirstToken">
+        insert into pickup_customer_push_info(firebase_token, created_at, updated_at)
+        values(#{firebaseToken}, now(), now())
+    </insert>
+
+    <update id="updateCustomerAndCompanyIdNull">
+        update pickup_customer_push_info set customer_id = null, company_id = null, updated_at = now()
+        where customer_id = #{userId} and company_id = #{companyId}
+    </update>
+    
+    <update id="updateToken" parameterType="hashMap">
+        update pickup_customer_push_info
+        set customer_id = #{userId}
+          , company_id = #{companyId}
+          , mobile_platform = #{mobilePlatform}
+          , app_version = #{appVersion}
+          , updated_at = now()
+        where firebase_token = #{firebaseToken}
+    </update>
+
+    <insert id="insertToken" parameterType="hashMap">
+        insert into pickup_customer_push_info(firebase_token, customer_id, company_id, mobile_platform, app_version, created_at, updated_at)
+        values(#{firebaseToken}, #{userId}, #{companyId}, #{mobilePlatform}, #{appVersion}, now(), now())
+    </insert>
+</mapper>

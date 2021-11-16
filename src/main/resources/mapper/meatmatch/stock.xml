@@ -2,6 +2,15 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="kr.co.meatmatch.mapper.meatmatch.StockMapper">
+    <select id="selectKindList" resultType="hashMap">
+        select distinct stock_kind.id, stock_kind.kind, stock_product.stock_category_id
+        from stock_product
+        join stock_kind on stock_product.stock_kind_id = stock_kind.id
+        where stock_product.stock_category_id = #{stockCategoryId}
+          and stock_kind.deleted_at is null
+        order by kind
+    </select>
+
     <select id="selectPartList" resultType="hashMap">
         select distinct stock_part.id, stock_part.part, stock_product.stock_kind_id
         from stock_product
@@ -208,4 +217,57 @@
              ) AS t
         order by t.kind_nm, t.part_nm, t.origin_nm, t.brand_nm, t.est_no, t.grade_nm, t.full_nm
     </select>
+
+    <select id="getStockByIds" resultType="hashMap">
+        select *
+        from stock_product
+        where stock_category_id = #{stockCategoryId}
+          and stock_kind_id = #{stockKindId}
+          and stock_part_id = #{stockPartId}
+          and stock_origin_id = #{stockOriginId}
+          and stock_brand_id = #{stockBrandId}
+          and stock_est_id = #{stockEstId}
+          and stock_grade_id = #{stockGradeId}
+          and stock_keep_id = #{stockKeepId}
+    </select>
+
+    <select id="selectPackList" resultType="hashMap">
+        select id, pack
+        from stock_pack
+        where stock_pack.deleted_at is null
+        order by pack
+    </select>
+
+    <select id="selectWarehouseList" resultType="hashMap">
+        select id, name, first_address, last_address
+        from stock_warehouse
+        where deleted_at is null
+        order by name
+    </select>
+
+    <select id="selectWarehouseListByIds" resultType="hashMap">
+        select *
+        from stock_warehouse
+        where deleted_at is null
+          and id in (${ids})
+        order by name
+    </select>
+
+    <select id="selectSellWarehouseList" resultType="hashMap">
+        select stock_warehouse.*
+        from orders_product
+                join stock_warehouse on stock_warehouse.id = orders_product.stock_warehouse_id
+        where orders_product.status = 'ready'
+          and orders_product.stock_product_id = #{stockProductId}
+          and orders_product.users_id = #{userId}
+        order by stock_warehouse.name
+    </select>
+
+    <insert id="insertStockProduct" parameterType="kr.co.meatmatch.dto.stock.StockProductInsertDto" useGeneratedKeys="true" keyProperty="id">
+        insert into stock_product(stock_category_id, stock_kind_id, stock_part_id, stock_origin_id
+                                 , stock_brand_id, stock_est_id, stock_grade_id, stock_keep_id, avg_weight)
+        values(#{categoryId}, #{kindId}, #{partId}, #{originId}
+              , #{brandId}, #{estId}, #{gradeId}, #{keepId}, #{avgWeight})
+    </insert>
+
 </mapper>

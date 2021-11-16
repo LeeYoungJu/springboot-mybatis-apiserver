@@ -38,6 +38,7 @@ public class SecurityConfigurer extends WebSecurityConfigurerAdapter {
             , PATH.API_PATH + "/main/custom-index"
             , PATH.API_PATH + "/stock/market-price", PATH.API_PATH + "/stock/part/**", PATH.API_PATH + "/stock/origin/**"
             , PATH.API_PATH + "/stock/brand/**", PATH.API_PATH + "/stock/est/**", PATH.API_PATH + "/stock/grade/**"
+            , PATH.API_PATH + "/fcm/token"
     };  // 로그인(토큰)이 필요없는 url
 
     @Override

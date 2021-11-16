@@ -13,6 +13,7 @@ import kr.co.meatmatch.util.CommonFunc;
 import kr.co.meatmatch.util.JwtUtil;
 import kr.co.meatmatch.util.PasswordGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,8 +38,17 @@ public class AuthService {
     private final MinioFileService minioFileService;
     private final SmsService smsService;
 
-    public HashMap<String, Object> getMyUserByAuthId(String authId) throws Exception {
-        return authMapper.findUserByAuthId(authId);
+    public HashMap<String, Object> getUserByToken(String token) {
+        return authMapper.findUserByAuthId(jwtUtil.extractUsername(token));
+    }
+
+    public int getCompIdByToken(String token) throws Exception {
+        HashMap<String, Object> User = this.getUserByToken(token);
+        return Integer.parseInt(User.get("company_id").toString());
+    }
+    public int getUserIdByToken(String token) throws Exception {
+        HashMap<String, Object> User = this.getUserByToken(token);
+        return Integer.parseInt(User.get("id").toString());
     }
 
     public HashMap<String, Object> login(String authId, String password) throws Exception {
@@ -47,7 +57,7 @@ public class AuthService {
         );
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authId);
-        final String jwt = jwtUtil.generateToken(userDetails, 1000*60*60*24*10);
+        final String jwt = jwtUtil.generateToken(userDetails);
 
         HashMap<String, Object> user = authMapper.findUserByAuthId(authId);
         user.remove("password");
@@ -67,7 +77,7 @@ public class AuthService {
         return list;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = {Exception.class})
     public HashMap<String, Object> findPassword(String authId, String phNum) throws Exception {
         List<HashMap<String, Object>> list = authMapper.findPassword(authId, phNum);
         if(list.size() == 0) {
@@ -137,7 +147,7 @@ public class AuthService {
         return resMap;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = {Exception.class})
     public HashMap<String, Object> register(RegisterDto registerDto, List<HashMap<String, Object>> files) throws Exception {
         authMapper.insertCompany(registerDto);  // Step.1 회사 정보 등록
         registerDto.setPhone(registerDto.getPhone().replaceAll("-", ""));

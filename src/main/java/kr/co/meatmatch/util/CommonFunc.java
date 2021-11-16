@@ -81,4 +81,21 @@ public class CommonFunc {
         res[1] = dateArr[1] + " 23:59:59";
         return res;
     }
+
+    public static String calcExpDate(int hopeMon) {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, hopeMon);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return sdf.format(cal.getTime());
+    }
+
+    public static String convertHopeMonOpt(String value) {
+        String compare = "";
+        if(value.equals("over")) {
+            compare = ">=";
+        } else if(value.equals("under")) {
+            compare = "<=";
+        }
+        return compare;
+    }
 }
