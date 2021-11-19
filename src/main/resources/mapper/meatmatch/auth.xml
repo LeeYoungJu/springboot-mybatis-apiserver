@@ -147,4 +147,11 @@
         order by created_at desc, id desc
     </select>
 
+    <select id="getMasterByUserId" resultType="hashMap">
+        select *
+        from users
+        where company_id = (select company_id from users where id = #{userId})
+          and type = 'master'
+    </select>
+
 </mapper>

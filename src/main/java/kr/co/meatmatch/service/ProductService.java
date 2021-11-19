@@ -7,6 +7,7 @@ import kr.co.meatmatch.mapper.meatmatch.OrderMapper;
 import kr.co.meatmatch.mapper.meatmatch.ProductMapper;
 import kr.co.meatmatch.mapper.meatmatch.StockMapper;
 import kr.co.meatmatch.service.minio.MinioFileService;
+import kr.co.meatmatch.service.sms.SmsService;
 import kr.co.meatmatch.util.CommonFunc;
 import kr.co.meatmatch.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class ProductService {
     private final StockMapper stockMapper;
     private final OrderMapper orderMapper;
     private final MinioFileService minioFileService;
+    private final SmsService smsService;
 
     public List<HashMap<String, Object>> selectMyProducts(MyProductsSearchDto myProductsSearchDto, String token) throws Exception {
         myProductsSearchDto.setCompId(authService.getCompIdByToken(token));
@@ -354,6 +356,17 @@ public class ProductService {
             MultipartFile file = (MultipartFile) files.get(i).get("fileObj");
             minioFileService.addAttachment("product/"+ordersProductInsertDto.getId()+"/"+fileName, file);   // Step.3 이미지 파일 minio 서버에 업로드
         }
+
+        int productId = ordersProductInsertDto.getId();
+        HashMap<String, Object> ProdForSms = orderMapper.getOrdersProductInfoForSms(productId);
+        String smsMsg = "[Meatmatch - 물품 등록 요청]\n"
+                + "물품등록번호 : " + ProdForSms.get("number").toString() + "\n"
+                + "상품 :  " + ProdForSms.get("kind").toString() + ", " + ProdForSms.get("part").toString()
+                + ", " + ProdForSms.get("origin").toString() + ", " + ProdForSms.get("brand").toString()
+                + ", " + ProdForSms.get("est_no").toString() + ", " + ProdForSms.get("grade").toString() + "\n"
+                + "상호명 : " + ProdForSms.get("company").toString() + "\n\n"
+                + "물품 등록 요청이 있습니다.\n관리자 페이지에서 확인해주세요.";
+        smsService.sendToAdmin(smsMsg);
 
         return orderMapper.getOrdersProductById(ordersProductInsertDto.getId()).get(0);
     }

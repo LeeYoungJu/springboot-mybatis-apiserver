@@ -33,4 +33,19 @@
         insert into pickup_customer_push_info(firebase_token, customer_id, company_id, mobile_platform, app_version, created_at, updated_at)
         values(#{firebaseToken}, #{userId}, #{companyId}, #{mobilePlatform}, #{appVersion}, now(), now())
     </insert>
+    
+    <select id="getTokenByUserId" resultType="hashMap">
+        select firebase_token
+        from pickup_customer_push_info
+        where customer_id = #{userId}
+          and deleted_at is null
+        order by id desc
+    </select>
+
+    <select id="getTokensByUserIds" resultType="hashMap">
+        select firebase_token
+        from pickup_customer_push_info
+        where customer_id in (${userIds})
+          and deleted_at is null
+    </select>
 </mapper>

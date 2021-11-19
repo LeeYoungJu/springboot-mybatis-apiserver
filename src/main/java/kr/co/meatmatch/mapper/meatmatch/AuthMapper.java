@@ -30,4 +30,6 @@ public interface AuthMapper {
     int updateMyInfo(MyInfoUpdateDto myInfoUpdateDto);
     List<HashMap<String, Object>> selectNotification(NoticeSearchDto noticeSearchDto);
     List<HashMap<String, Object>> selectFaq();
+
+    HashMap<String, Object> getMasterByUserId(int userId);
 }

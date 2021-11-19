@@ -32,6 +32,7 @@ public class KsnetService {
     private final KsnetMapper ksnetMapper;
     private final AuthService authService;
     private final DepositService depositService;
+    private final FcmService fcmService;
 
     @Value("${ksnet.CMSAPI_URL}")
     private String CMSAPI_URL;
@@ -136,7 +137,9 @@ public class KsnetService {
      * 출금요청 (실패해도 히스토리에 남기기 위해 일부러 트랜잭션 안걸었음)
      */
     public HashMap<String, Object> applyWithdraw(WithdrawApplyDto withdrawApplyDto, String token) throws Exception {
-        int compId = authService.getCompIdByToken(token);
+        HashMap<String, Object> User = authService.getUserByToken(token);
+        int userId = Integer.parseInt(User.get("id").toString());
+        int compId = Integer.parseInt(User.get("company_id").toString());
         withdrawApplyDto.setCompId(compId);
 
         List<HashMap<String, Object>> accValidChecker = ksnetMapper.getValidWithdrawAccList(withdrawApplyDto);
@@ -216,6 +219,7 @@ public class KsnetService {
                 if(depositListDto.getId() > 0) {
                     // Step6 deposit_list에 성공적으로 데이터를 삽입했다면 withdraw_history 테이블의 confirm_yn을 'Y'로 변경
                     ksnetMapper.updateWithdrawHistoryConfirmYn(historyId, "Y");
+                    fcmService.sendWithdrawMessage(userId, withdrawApplyDto.getAmount());
                 }
             }
         }

@@ -567,4 +567,66 @@
               , #{income_report1}, #{income_report2}, #{income_report3}, #{income_report4}, #{income_report5}
               , #{inventory1}, #{inventory2}, #{inventory3}, #{inventory4}, #{inventory5})
     </insert>
+
+    <select id="getOrdersProductInfoForFcm" resultType="hashMap">
+        select stock_part.part, stock_grade.grade
+        from orders_product
+            join stock_product on stock_product.id = orders_product.stock_product_id
+            join stock_grade on stock_grade.id = stock_product.stock_grade_id
+            join stock_part on stock_part.id = stock_product.stock_part_id
+        where orders_product.id = #{productId}
+    </select>
+
+    <select id="getOrdersBookInfoForFcm" resultType="hashMap">
+        select stock_part.part, stock_grade.grade
+        from orders_book
+                 join stock_product on stock_product.id = orders_book.stock_product_id
+                 join stock_grade on stock_grade.id = stock_product.stock_grade_id
+                 join stock_part on stock_part.id = stock_product.stock_part_id
+        where orders_book.id = #{bookId}
+    </select>
+
+    <select id="getOrdersBidInfoForFcm" resultType="hashMap">
+        select stock_part.part, stock_grade.grade, orders_bid.seller_id, orders_bid.buyer_id
+        from orders_bid
+                 join stock_product on stock_product.id = orders_bid.stock_product_id
+                 join stock_grade on stock_grade.id = stock_product.stock_grade_id
+                 join stock_part on stock_part.id = stock_product.stock_part_id
+        where orders_bid.id = #{bidId}
+    </select>
+
+    <select id="getOrdersProductInfoForSms" resultType="hashMap">
+        select orders_product.id as number, stock_kind.kind, stock_part.part
+             , stock_origin.origin, stock_brand.brand, stock_est.est_no, stock_grade.grade
+             , company.company
+        from orders_product
+                 join users on users.id = orders_product.users_id
+                 join company on company.id = users.company_id
+                 join stock_product on orders_product.stock_product_id = stock_product.id
+                 join stock_kind on stock_product.stock_kind_id = stock_kind.id
+                 join stock_part on stock_product.stock_part_id = stock_part.id
+                 join stock_origin on stock_product.stock_origin_id = stock_origin.id
+                 join stock_brand on stock_product.stock_brand_id = stock_brand.id
+                 join stock_est on stock_product.stock_est_id = stock_est.id
+                 join stock_grade on stock_product.stock_grade_id = stock_grade.id
+        where orders_product.id = #{productId}
+    </select>
+
+    <select id="getOrdersBidInfoForSms" resultType="hashMap">
+        select (select company from company where id = seller.company_id) sell_comp
+             , (select company from company where id = buyer.company_id) buy_comp
+             , sk.kind, spt.part, so.origin, sb.brand, se.est_no, sg.grade
+             , orders_bid.id as number, orders_bid.cont_kg_price as price
+        from orders_bid
+                 join users as seller on seller.id = orders_bid.seller_id
+                 join users as buyer on buyer.id = orders_bid.buyer_id
+                 join stock_product sp on sp.id = orders_bid.stock_product_id
+                 join stock_kind sk on sk.id = sp.stock_kind_id
+                 join stock_part spt on spt.id = sp.stock_part_id
+                 join stock_origin so on so.id = sp.stock_origin_id
+                 join stock_brand sb on sb.id = sp.stock_brand_id
+                 join stock_est se on se.id = sp.stock_est_id
+                 join stock_grade sg on sg.id = sp.stock_grade_id
+        where orders_bid.id = #{bidId}
+    </select>
 </mapper>

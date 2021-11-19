@@ -52,4 +52,11 @@ public interface OrderMapper {
     List<HashMap<String, Object>> getTradeDoneByBookId(int bookId);
     List<HashMap<String, Object>> getBookRemainAmount(int bookId);
     int insertOrdersProduct(OrdersProductInsertDto ordersProductInsertDto);
+
+    HashMap<String, Object> getOrdersProductInfoForFcm(int productId);
+    HashMap<String, Object> getOrdersBookInfoForFcm(int bookId);
+    HashMap<String, Object> getOrdersBidInfoForFcm(int bidId);
+
+    HashMap<String, Object> getOrdersProductInfoForSms(int productId);
+    HashMap<String, Object> getOrdersBidInfoForSms(int bidId);
 }

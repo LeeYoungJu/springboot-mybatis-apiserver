@@ -4,6 +4,7 @@ import kr.co.meatmatch.dto.order.*;
 import kr.co.meatmatch.mapper.meatmatch.OrderMapper;
 import kr.co.meatmatch.mapper.meatmatch.ProductMapper;
 import kr.co.meatmatch.mapper.meatmatch.StockMapper;
+import kr.co.meatmatch.service.sms.SmsService;
 import kr.co.meatmatch.util.CommonFunc;
 import kr.co.meatmatch.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +21,11 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final ProductMapper productMapper;
     private final AuthService authService;
-    private final JwtUtil jwtUtil;
     private final StockMapper stockMapper;
     private final StockService stockService;
-    private final FcmMessageService fcmMessageService;
+    private final FcmService fcmService;
     private final ProductService productService;
+    private final SmsService smsService;
 
     public List<HashMap<String, Object>> selectOrdersProductInfo(OrdersProductInfoSearchDto ordersProductInfoSearchDto) throws Exception {
         List<HashMap<String, Object>> list = orderMapper.selectOrdersProductInfo(ordersProductInfoSearchDto);
@@ -76,13 +77,16 @@ public class OrderService {
             throw new Exception("물품이 존재하지 않습니다.");
         }
         HashMap<String, Object> OrdersProduct = OrdersProductList.get(0);
+        int userId = Integer.parseInt(OrdersProduct.get("users_id").toString());
 
         if(status.equals("ready")   ) {
             orderMapper.updateOrdersProductStatus(productId, "ready");
+            fcmService.sendProductMessage(1, productId, userId);
         } else if(status.equals("cancel")) {
             String curStatus = OrdersProduct.get("status").toString();
             if(curStatus.equals("request")) {
                 this.cancelOrdersProduct(productId);
+                fcmService.sendProductMessage(4, productId, userId);
             } else if(curStatus.equals("delete_request")) {
                 List<HashMap<String, Object>> tradeDoneList = orderMapper.getTradeDoneByProductId(productId);
                 if(tradeDoneList != null && tradeDoneList.size() > 0) {
@@ -90,13 +94,25 @@ public class OrderService {
                 } else {
                     this.cancelOrdersProduct(productId);
                 }
+                fcmService.sendProductMessage(2, productId, userId);
             } else if(curStatus.equals("ready")) {
                 this.cancelOrdersProduct(productId);
+                fcmService.sendProductMessage(4, productId, userId);
             }
         } else if(status.equals("delete_request")) {
             orderMapper.updateOrdersProductStatus(productId, "delete_request");
+            HashMap<String, Object> ProdForSms = orderMapper.getOrdersProductInfoForSms(productId);
+            String smsMsg = "[Meatmatch - 물품 등록 취소 요청]\n"
+                    + "물품등록번호 : " + ProdForSms.get("number").toString() + "\n"
+                    + "상품 :  " + ProdForSms.get("kind").toString() + ", " + ProdForSms.get("part").toString()
+                    + ", " + ProdForSms.get("origin").toString() + ", " + ProdForSms.get("brand").toString()
+                    + ", " + ProdForSms.get("est_no").toString() + ", " + ProdForSms.get("grade").toString() + "\n"
+                    + "상호명 : " + ProdForSms.get("company").toString() + "\n\n"
+                    + "물품 등록 취소 요청이 있습니다.\n관리자 페이지에서 확인해주세요.";
+            smsService.sendToAdmin(smsMsg);
         } else if(status.equals("delete_cancel")) {
             orderMapper.updateOrdersProductStatus(productId, "ready");
+            fcmService.sendProductMessage(5, productId, userId);
         }
 
         return orderMapper.getOrdersProductById(productId).get(0);
@@ -321,7 +337,8 @@ public class OrderService {
      */
     @Transactional(rollbackFor = {Exception.class})
     public HashMap<String, Object> insertBuyBook(BuyBookInsertDto buyBookInsertDto, String token) throws Exception {
-        buyBookInsertDto.setUsers_id(authService.getUserIdByToken(token));
+        int userId = authService.getUserIdByToken(token);
+        buyBookInsertDto.setUsers_id(userId);
 
         List<HashMap<String, Object>> StockProductList =  stockService.getStockAvgWeight(buyBookInsertDto.getStock_category_id(), buyBookInsertDto.getStock_kind_id(), buyBookInsertDto.getStock_part_id()
                                                                                     , buyBookInsertDto.getStock_origin_id(), buyBookInsertDto.getStock_brand_id(), buyBookInsertDto.getStock_est_id()
@@ -347,6 +364,8 @@ public class OrderService {
             orderMapper.insertOrdersWarehouse(param);
         }
 
+        fcmService.sendOrderMessage(ordersBookId, userId);
+
         return orderMapper.getOrdersBookById(ordersBookId).get(0);
     }
 
@@ -368,7 +387,8 @@ public class OrderService {
     @Transactional(rollbackFor = {Exception.class})
     public HashMap<String, Object> insertSellBook(SellBookInsertDto sellBookInsertDto, String token) throws Exception {
         HashMap<String, Object> User = authService.getUserByToken(token);
-        sellBookInsertDto.setUserId(Integer.parseInt(User.get("id").toString()));
+        int userId = Integer.parseInt(User.get("id").toString());
+        sellBookInsertDto.setUserId(userId);
         int compId = Integer.parseInt(User.get("company_id").toString());
         int productId = sellBookInsertDto.getOrders_product_id();
 
@@ -382,27 +402,27 @@ public class OrderService {
         }
 
         orderMapper.insertSellBook(sellBookInsertDto);
+        int bookId = sellBookInsertDto.getId();
 
         if(sellBookInsertDto.getAmount() == readyAmt) {
             orderMapper.updateOrdersProductStatus(productId, "done");
         }
 
-        if(sellBookInsertDto.getId() <= 0) {
+        if(bookId <= 0) {
             throw new Exception("판매등록에 실패하였습니다.");
         }
 
-//        fcmMessageService.sendMessageTo("cCySPSzdaiQ:APA91bHfwG57VNTYU3JLR1doGRjFH27F_ann017NtxqDb3lvZTD_99hDposcuvnn19s-0C6PSeIg3OJt3-RC0-qgE3M5ZIrIiN23LUjI670MJ3WWzvD2D-E1lrQvdXzxJkdAxLiIa5_Y"
-//                                        , "test..", "testetstestetstes");
-
         HashMap<String, Object> param = new HashMap<>();
-        param.put("orders_book_id", sellBookInsertDto.getId());
+        param.put("orders_book_id", bookId);
         param.put("stock_warehouse_id", sellBookInsertDto.getStock_warehouse_id());
         param.put("stock_est_id", sellBookInsertDto.getStock_est_id());
         orderMapper.insertOrdersWarehouse(param);
         orderMapper.insertOrdersEst(param);
 
-        HashMap<String, Object> NewOrdersBook = orderMapper.getOrdersBookById(sellBookInsertDto.getId()).get(0);
+        HashMap<String, Object> NewOrdersBook = orderMapper.getOrdersBookById(bookId).get(0);
         NewOrdersBook.put("company_id", compId);
+
+        fcmService.sendOrderMessage(bookId, userId);
 
         return NewOrdersBook;
     }
@@ -535,22 +555,16 @@ public class OrderService {
 
         int bidAmount = ordersBidInsertDto.getAmount();
 
+        int bookRemainAmt = 0;
+        int productRemainAmt = 0;
         List<HashMap<String, Object>> bookAmtChecker = orderMapper.checkOrdersBookAmount(bookId);
-        if(bookAmtChecker == null || bookAmtChecker.size() <= 0
-                || Integer.parseInt(bookAmtChecker.get(0).get("amount").toString()) < bidAmount) {
-            orderMapper.updateOrdersBidStatus(bidId, "NG");
-            throw new Exception("등록물품(book) 수량이 부족합니다.");
+        if(bookAmtChecker != null && bookAmtChecker.size() > 0) {
+            bookRemainAmt = Integer.parseInt(bookAmtChecker.get(0).get("amount").toString());
         }
-
         List<HashMap<String, Object>> productAmtChecker = orderMapper.checkOrdersProductAmount(productId);
-        if(productAmtChecker == null || productAmtChecker.size() <= 0
-                || Integer.parseInt(productAmtChecker.get(0).get("amount").toString()) < bidAmount) {
-            orderMapper.updateOrdersBidStatus(bidId, "NG");
-            throw new Exception("등록물품(product) 수량이 부족합니다.");
+        if(productAmtChecker != null && productAmtChecker.size() > 0) {
+            productRemainAmt = Integer.parseInt(productAmtChecker.get(0).get("amount").toString());
         }
-
-        int bookRemainAmt = Integer.parseInt(bookAmtChecker.get(0).get("amount").toString());
-        int productRemainAmt = Integer.parseInt(productAmtChecker.get(0).get("amount").toString());
         if(bidAmount == bookRemainAmt) {
             orderMapper.updateOrdersBookStatus(bookId, "done");
         }
@@ -558,6 +572,18 @@ public class OrderService {
             orderMapper.updateOrdersProductStatus(productId, "done");
         }
         orderMapper.updateOrdersBidStatus(bidId, "done");
+
+        fcmService.sendBidMessage(bidId);
+
+        HashMap<String, Object> BidForSms = orderMapper.getOrdersBidInfoForSms(bidId);
+        String smsMsg = "[Meatmatch - 상품 체결]\n주문체결번호 : " + BidForSms.get("number").toString()
+                + "\n매도자 : " + BidForSms.get("sell_comp").toString()
+                + "\n매수자 : " + BidForSms.get("buy_comp").toString()
+                + "\n상품 :  " + BidForSms.get("kind").toString() + ", " + BidForSms.get("part").toString()
+                + ", " + BidForSms.get("origin").toString() + ", " + BidForSms.get("brand").toString()
+                + ", " + BidForSms.get("est_no").toString() + ", " + BidForSms.get("grade").toString()
+                + "\n체결가격 : " + BidForSms.get("price").toString() + "\n\n거래가 체결 되었습니다.\n체결 내용을 관리자 페이지에서 확인해주세요.";
+        smsService.sendToAdmin(smsMsg);
 
         return orderMapper.getOrdersBidById(bidId).get(0);
     }

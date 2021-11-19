@@ -12,4 +12,7 @@ public interface FcmMapper {
     int updateCustomerAndCompanyIdNull(int userId, int companyId);
     int updateToken(HashMap<String, Object> param);
     int insertToken(HashMap<String, Object> param);
+
+    HashMap<String, Object> getTokenByUserId(int userId);
+    List<HashMap<String, Object>> getTokensByUserIds(String userIds);
 }

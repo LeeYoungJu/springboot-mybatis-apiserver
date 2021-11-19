@@ -40,6 +40,12 @@ public class FcmMessageService {
         System.out.println(response.body().string());
     }
 
+    public void sendMessageTo(List<String> tokens, String title, String body) throws Exception {
+        for(String token : tokens) {
+            this.sendMessageTo(token, title, body);
+        }
+    }
+
     private String makeMessage(String targetToken, String title, String body) throws Exception {
         FcmMessage fcmMessage = FcmMessage.builder()
                 .message(FcmMessage.Message.builder()
