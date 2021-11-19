@@ -12,6 +12,7 @@ public interface ProductMapper {
     List<HashMap<String, Object>> selectSellingProducts(MySellingProductsSearchDto mySellingProductsSearchDto);
     List<HashMap<String, Object>> selectEstList(String ids);        // ids 형태 : '1,3,5,7'
     List<HashMap<String, Object>> selectWarehouseList(String ids);  // ids 형태 : '1,3,5,7'
+    List<HashMap<String, Object>> selectOrdersWarehouseByBookIds(String bookIds);
     List<HashMap<String, Object>> selectBuyingProducts(MyBuyingProductsSearchDto myBuyingProductsSearchDto);
     List<HashMap<String, Object>> selectCalculateInfo(MyTradeCalcInfoSearchDto myTradeCalcInfoSearchDto);
     List<HashMap<String, Object>> selectCompletedTradeList(MyTradeCompleteSearchDto myTradeCompleteSearchDto);

@@ -77,7 +77,7 @@ public class OrderService {
         }
         HashMap<String, Object> OrdersProduct = OrdersProductList.get(0);
 
-        if(status.equals("ready")) {
+        if(status.equals("ready")   ) {
             orderMapper.updateOrdersProductStatus(productId, "ready");
         } else if(status.equals("cancel")) {
             String curStatus = OrdersProduct.get("status").toString();
@@ -416,8 +416,8 @@ public class OrderService {
         List<HashMap<String, Object>> sellItems = orderMapper.selectSellingProductsInBuyPage(requestDto);
         if(sellItems != null && sellItems.size() > 0) {
             String[] estNames = {"stock_est_id", "stockEstList"};
-            String[] warehouseNames = {"stock_warehouse_id", "stockWarehouseList"};
-            productService.setEstAndWarehouseList(sellItems, estNames, warehouseNames);
+            String warehouseResName = "stockWarehouseList";
+            productService.setEstAndWarehouseList(sellItems, estNames, warehouseResName);
 
             String warehouseIds = this.makeWarehouseIds(sellItems, "stock_warehouse_id");
             List<HashMap<String, Object>> warehouseList = stockMapper.selectWarehouseListByIds(warehouseIds);
@@ -440,8 +440,7 @@ public class OrderService {
         resMap.put("stockProductInfo", stockProductInfo);
         List<HashMap<String, Object>> buyItems = orderMapper.selectBuyingProductsInSellPage(requestDto);
         if(buyItems != null && buyItems.size() > 0) {
-            String[] warehouseNames = {"stock_warehouse_id", "stockWarehouseList"};
-            productService.setWarehouseList(buyItems, warehouseNames);
+            productService.setWarehouseList(buyItems, "stockWarehouseList");
 
             String warehouseIds = this.makeWarehouseIds(buyItems, "stock_warehouse_id");
             List<HashMap<String, Object>> warehouseList = stockMapper.selectWarehouseListByIds(warehouseIds);

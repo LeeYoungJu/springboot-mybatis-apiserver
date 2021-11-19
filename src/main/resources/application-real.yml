@@ -69,3 +69,24 @@ pagehelper:
   close-conn: true
   default-count: true
   support-methods-arguments: true
+
+ksnet:
+  CMSAPI_URL: "https://cmsapi.ksnet.co.kr/ksnet/"   # 운영 URL
+  EKEY: "68D13F3E4F09455E34C8F71DB425DB2E"
+  MSALT: "MA01"
+  KSCODE: "4666"
+  COMP_CODE1: "MTWORKS1"                            # KSNET에서 부여한 업체별 코드
+  COMP_CODE2: "MTWORKS2"                            # KSNET에서 부여한 업체별 코드 ( KSNET 성명조회 API 를 호출할때만 이 코드 활용 )
+  IN_PRINT_CONTENT: "meatmatch"                     # 송금시 입금계좌 인자내역
+  OUT_PRINT_CONTENT: ""                             # 송금시 출금계좌 인자내역
+  REPRESENTATIVE_NAME: "meatmatch"                  # (전문에 포함되는) 가상계좌에서 사용중
+  MANAGER_NAME: "김소아"                              # (전문에 포함되는) 확인중. 가상계좌에서 사용중
+  MANAGER_PHONE: "0317396884"                       # (전문에 포함되는) 확인중. 가상계좌에서 사용중. 01098455006 는 기존외주업체 개발자
+  BUSINESS_NUMBER: "1298687864"                     # (전문에 포함되는)
+  MESSAGE_CODE: "0900"                              # (전문에 포함되는) 메세지 코드, 요청 전문 타입(가상계좌 요청)
+  BC_CODE: "200"                                    # (전문에 포함되는) 업무 구분코드
+  COMP_BANKCODE: "020"                              # 은행코드(계약은행) (가상계좌의 모계좌로 추측)(우리은행)
+  COMP_ACCOUNT_NO: "28270146018518"                 # KSNET에서 부여받은 가상계좌 보계좌
+  WITHDRAWAL_MIN_AMOUNT: 10000                      # 출금 API 에서 최소 출금액
+  WITHDRAWAL_MAX_AMOUNT: 1000000000                 # 출금 API 에서 최대 출금액 1000000000
+  WITHDRAWAL_FEE: 550                               # 출금 API 에서 출금시 요청금액에서 제외하는 금액

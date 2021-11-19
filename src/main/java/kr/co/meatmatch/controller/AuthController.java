@@ -7,16 +7,20 @@ import kr.co.meatmatch.common.exception.DuplicatedAuthDataException;
 import kr.co.meatmatch.common.exception.InvalidDataException;
 import kr.co.meatmatch.common.exception.UserNotFoundException;
 import kr.co.meatmatch.common.exception.InvalidLengthException;
-import kr.co.meatmatch.dto.auth.RegisterDto;
+import kr.co.meatmatch.dto.auth.*;
+import kr.co.meatmatch.dto.paging.PagingResultDto;
 import kr.co.meatmatch.service.AuthService;
 import kr.co.meatmatch.util.CommonFunc;
+import kr.co.meatmatch.util.PagingUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.mail.internet.AddressException;
+import javax.validation.Valid;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +30,9 @@ import java.util.List;
 @RestController
 public class AuthController {
     private final AuthService authService;
+
+    @Value("${constants.page-size}")
+    private int PAGE_SIZE;
 
     @PostMapping(PATH.API_PATH + "/auth/login")
     public ResponseEntity<ResponseDto> login(@RequestBody HashMap<String, Object> userRequest) throws Exception {
@@ -194,6 +201,110 @@ public class AuthController {
         HashMap<String, Object> resMap = authService.register(registerDto, files);
 
         return ResponseDto.ok(resMap);
+    }
+
+    @GetMapping(PATH.API_PATH + "/profile")
+    public ResponseEntity<ResponseDto> getUserProfile(@RequestHeader("Authorization") String token) throws Exception {
+        return ResponseDto.ok(
+                authService.getUserProfile(CommonFunc.removeBearerFromToken(token))
+        );
+    }
+
+    @PostMapping(PATH.API_PATH + "/auth/logout")
+    public ResponseEntity<ResponseDto> logout(@RequestHeader("Authorization") String token) throws Exception {
+        return ResponseDto.ok(
+                authService.logout(CommonFunc.removeBearerFromToken(token))
+        );
+    }
+
+    @GetMapping(PATH.API_PATH + "/company/member")
+    public ResponseEntity<ResponseDto> getCompanyMembers(@RequestHeader("Authorization") String token) throws Exception {
+        return ResponseDto.ok(
+                authService.getCompanyMembers(CommonFunc.removeBearerFromToken(token))
+        );
+    }
+
+    @PostMapping(PATH.API_PATH + "/company/member/register")
+    public ResponseEntity<ResponseDto> insertCompanyMember(@RequestHeader("Authorization") String token
+                                                         , @RequestBody CompanyMemberInsertDto companyMemberInsertDto) throws Exception {
+        return ResponseDto.ok(
+                authService.insertCompanyMember(
+                        companyMemberInsertDto
+                        , CommonFunc.removeBearerFromToken(token)
+                )
+        );
+    }
+
+    @PostMapping(PATH.API_PATH + "/company/member/check-email")
+    public ResponseEntity<ResponseDto> checkUpdateEmail(@RequestBody HashMap<String, Object> requestMap) throws Exception {
+        try {
+            String oldEmail = requestMap.get("email_old").toString();
+            String newEmail = requestMap.get("email_new").toString();
+            return ResponseDto.ok(
+                    authService.checkUpdateEmail(oldEmail, newEmail)
+            );
+        } catch (DuplicatedAuthDataException e) {
+            List<String> list = new ArrayList<>();
+            list.add("이메일이 중복됩니다.");
+            HashMap<String, Object> res = new HashMap<>();
+            res.put("email_new", list);
+            return ResponseDto.bad(STATUS_CODE.BAD, res);
+        }
+    }
+
+    @PutMapping(PATH.API_PATH + "/company/member/update")
+    public ResponseEntity<ResponseDto> updateCompanyMember(@Valid @RequestBody CompanyMemberUpdateDto companyMemberUpdateDto) throws Exception {
+        return ResponseDto.ok(
+                authService.updateCompanyMember(companyMemberUpdateDto)
+        );
+    }
+
+    @DeleteMapping(PATH.API_PATH + "/company/member/delete")
+    public ResponseEntity<ResponseDto> deleteCompanyMember(@RequestBody HashMap<String, Object> requestMap) throws Exception {
+        return ResponseDto.ok(
+                authService.deleteCompanyMember(requestMap.get("auth_id").toString())
+        );
+    }
+
+    @PostMapping(PATH.API_PATH + "/alarm/update")
+    public ResponseEntity<ResponseDto> updateUserAlarmCheck(@RequestHeader("Authorization") String token
+                                                            , @RequestBody HashMap<String, Object> requestMap) throws Exception {
+        return ResponseDto.ok(
+                authService.updateUserAlarmCheck(
+                        requestMap.get("alarm_check").toString()
+                        , CommonFunc.removeBearerFromToken(token)
+                )
+        );
+    }
+
+    @PutMapping(PATH.API_PATH + "/profile/update")
+    public ResponseEntity<ResponseDto> updateMyInfo(@RequestHeader("Authorization") String token
+                                                    , @Valid @RequestBody MyInfoUpdateDto myInfoUpdateDto) throws Exception {
+        return ResponseDto.ok(
+                authService.updateMyInfo(
+                        myInfoUpdateDto
+                        , CommonFunc.removeBearerFromToken(token)
+                )
+        );
+    }
+
+    @GetMapping(PATH.API_PATH + "/notices")
+    public ResponseEntity<ResponseDto> selectNotification(@ModelAttribute NoticeSearchDto noticeSearchDto) throws Exception {
+        PagingUtil.init(noticeSearchDto, 8);
+        List<HashMap<String, Object>> list = authService.selectNotification(noticeSearchDto);
+        PagingResultDto pagingResultDto = PagingUtil.of(list);
+
+        HashMap<String, Object> res = new HashMap<>();
+        res.put("notice", pagingResultDto);
+
+        return ResponseDto.ok(res);
+    }
+
+    @GetMapping(PATH.API_PATH + "/faqs")
+    public ResponseEntity<ResponseDto> selectFaq() throws Exception {
+        HashMap<String, Object> res = new HashMap<>();
+        res.put("faqs", authService.selectFaq());
+        return ResponseDto.ok(res);
     }
 
 }

@@ -14,7 +14,7 @@ public class OrdersProductInfoSearchDto extends BasicDto {
     @Range(min = 1)
     protected int orders_product_id;
 
-    protected int orders_book_id;
+    protected String orders_book_id;
 
     protected String status;
 

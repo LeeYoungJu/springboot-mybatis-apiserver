@@ -16,4 +16,90 @@
           and is_approved = 'Y'
         order by id desc, bank_code desc
     </select>
+    
+    <select id="getLockedWithdrawAcc" resultType="hashMap">
+        select reply_code, bank_name, account_name, account
+        from withdraw_history
+        where company_id = #{compId}
+          and confirm_yn = 'N'
+    </select>
+
+    <select id="getVirAccSeq" resultType="hashMap">
+        select seq
+        from virtual_account_seq
+        where id = 1
+    </select>
+
+    <update id="updateVirAccSeq">
+        update virtual_account_seq set seq = #{seq}
+        where id = 1
+    </update>
+
+    <select id="getValidWithdrawAccList" resultType="hashMap">
+        select bank_code, withdraw_account_no
+        from withdraw_account
+        where is_approved = 'Y'
+          and company_id = #{compId}
+          and bank_code = #{accountBankCode}
+          and withdraw_account_no = #{accountNo}
+    </select>
+    
+    <insert id="insertWithdrawHistory" parameterType="kr.co.meatmatch.dto.ksnet.WithdrawHistoryInsertDto" useGeneratedKeys="true" keyProperty="id">
+        insert into withdraw_history(launch_id, company_id, amount, account_name, account, seq_no)
+        values(#{launchId}, #{compId}, #{amount}, #{accName}, #{accNo}, #{accSeq})
+    </insert>
+    
+    <select id="getBankNmByCode" resultType="hashMap">
+        select bank
+        from bank_code_data
+        where code = #{code}
+    </select>
+    
+    <update id="updateWithdrawHistory">
+        update withdraw_history set
+              bank_name = #{bankNm}
+            , reply_code = #{replyCode}
+        where id = #{historyId}
+    </update>
+
+    <update id="updateWithdrawHistoryConfirmYn">
+        update withdraw_history set confirm_yn = #{confirmYn}
+        where id = #{historyId}
+    </update>
+    
+    <insert id="insertDepositListWhenWithdraw" parameterType="kr.co.meatmatch.dto.ksnet.WithdrawDepositListInsertDto" useGeneratedKeys="true" keyProperty="id">
+        insert into deposit_list(company_id, type, total_amount, amount, fee, bank_name, acount_name, account)
+        values(#{compId}, #{type}, #{totalAmount}, #{amount}, #{fee}, #{bankNm}, #{accNm}, #{accNo})
+    </insert>
+
+    <select id="getWithdrawAccListAll" resultType="hashMap">
+        select id, bank_code, withdraw_account_no, is_approved
+        from withdraw_account
+        where deleted_at is null
+          and company_id = #{compId}
+        order by id desc, bank_code desc
+    </select>
+
+    <select id="getBankList" resultType="hashMap">
+        select code, bank
+        from bank_code_data
+        order by bank
+    </select>
+
+    <select id="getWithdrawAccountById" resultType="hashMap">
+        select *
+        from withdraw_account
+        where id = #{accId}
+    </select>
+    
+    <insert id="insertWithdrawAccount" parameterType="kr.co.meatmatch.dto.auth.WithdrawAccCreateDto" useGeneratedKeys="true" keyProperty="id">
+        insert into withdraw_account(company_id, bank_code, withdraw_account_no, withdraw_account_depositor, reg_users_id, mod_users_id)
+        values(#{compId}, #{accountBankCode}, #{accountNo}, #{acountName}, #{userId}, #{userId})
+    </insert>
+
+    <update id="deleteWithdrawAccount">
+        update withdraw_account set deleted_at = now()
+        where id = #{accId}
+    </update>
+
 </mapper>

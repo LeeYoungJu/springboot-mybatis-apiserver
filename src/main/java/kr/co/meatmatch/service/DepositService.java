@@ -62,6 +62,12 @@ public class DepositService {
         return resMap;
     }
 
+    public int getBalance(int compId) throws Exception {
+        int totalProp = this.getTotalProp(compId);
+        int unsolvedProp = this.getUnsolvedProp(compId);
+        return totalProp - unsolvedProp;
+    }
+
     public List<HashMap<String, Object>> selectDepositHistory(DepositHistorySearchDto depositHistorySearchDto, String token) throws Exception {
         depositHistorySearchDto.setCompId(authService.getCompIdByToken(token));
         return depositMapper.selectDepositHistory(depositHistorySearchDto);

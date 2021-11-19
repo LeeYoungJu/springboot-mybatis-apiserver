@@ -4,7 +4,7 @@ import kr.co.meatmatch.common.exception.UserNotFoundException;
 import kr.co.meatmatch.common.exception.DuplicatedAuthDataException;
 import kr.co.meatmatch.common.exception.InvalidDataException;
 import kr.co.meatmatch.common.exception.InvalidLengthException;
-import kr.co.meatmatch.dto.auth.RegisterDto;
+import kr.co.meatmatch.dto.auth.*;
 import kr.co.meatmatch.mapper.meatmatch.AuthMapper;
 import kr.co.meatmatch.service.mail.EmailService;
 import kr.co.meatmatch.service.minio.MinioFileService;
@@ -101,7 +101,7 @@ public class AuthService {
     }
 
     public HashMap<String, Object> checkId(String id) throws Exception {
-        boolean isOk = Pattern.matches("^((?=.*[a-zA-Z])[a-zA-Z0-9])[A-Za-z\\d]{5,17}$", id);
+        boolean isOk = CommonFunc.checkAuthId(id);
         if(!isOk) {
             throw new InvalidDataException();
         }
@@ -183,5 +183,106 @@ public class AuthService {
         HashMap<String, Object> resMap = new HashMap<>();
         resMap.put("message", "Successful user registration");
         return resMap;
+    }
+
+    public HashMap<String, Object> getUserProfile(String token) throws Exception {
+        HashMap<String, Object> User = this.getUserByToken(token);
+        User.remove("password");
+        HashMap<String, Object> Company = authMapper.findCompanyById(Integer.parseInt(User.get("company_id").toString()));
+        User.put("company", Company);
+
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("user", User);
+        return resMap;
+    }
+
+    public HashMap<String, Object> logout(String token) throws Exception {
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("message", "Successfully logged out");
+        return resMap;
+    }
+
+    public HashMap<String, Object> getCompanyMembers(String token) throws Exception {
+        int compId = this.getCompIdByToken(token);
+        List<HashMap<String, Object>> list = authMapper.getCompanyMembers(compId);
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("members", list);
+        return resMap;
+    }
+
+    public HashMap<String, Object> insertCompanyMember(CompanyMemberInsertDto companyMemberInsertDto, String token) throws Exception {
+        companyMemberInsertDto.setCompId(this.getCompIdByToken(token));
+        companyMemberInsertDto.setPhone(companyMemberInsertDto.getPhone().replaceAll("-", ""));
+        companyMemberInsertDto.setPassword(CommonFunc.encodeBCrypt(companyMemberInsertDto.getPassword()));
+        authMapper.insertCompanyMember(companyMemberInsertDto);
+        return authMapper.findUserByAuthId(companyMemberInsertDto.getAuth_id());
+    }
+
+    public HashMap<String, Object> checkUpdateEmail(String oldEmail, String newEmail) throws Exception {
+        int cnt = authMapper.checkUpdateEmail(oldEmail, newEmail);
+        if(cnt > 0) {
+            throw new DuplicatedAuthDataException();
+        }
+        HashMap<String, Object> res = new HashMap<>();
+        res.put("can_update", true);
+        return res;
+    }
+
+    public HashMap<String, Object> updateCompanyMember(CompanyMemberUpdateDto companyMemberUpdateDto) throws Exception {
+        InternetAddress emailAddr = new InternetAddress(companyMemberUpdateDto.getEmail());
+        emailAddr.validate();   // 형식에 맞지 않으면 AddressException 예외를 발생시킨다.
+
+        companyMemberUpdateDto.setPhone(companyMemberUpdateDto.getPhone().replaceAll("-", ""));
+        if(companyMemberUpdateDto.getPassword() != null && !companyMemberUpdateDto.getPassword().equals("")) {
+            companyMemberUpdateDto.setPassword(CommonFunc.encodeBCrypt(companyMemberUpdateDto.getPassword()));
+        }
+        authMapper.updateCompanyMemberInfo(companyMemberUpdateDto);
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("message", "Successful update member");
+        return resMap;
+    }
+
+    public HashMap<String, Object> deleteCompanyMember(String authId) throws Exception {
+        HashMap<String, Object> User = authMapper.findUserByAuthId(authId);
+        if(User == null) {
+            throw new Exception("해당 멤버가 존재하지 않습니다.");
+        }
+        int userId = Integer.parseInt(User.get("id").toString());
+        String delAuthId = authId + userId;
+        String delEmail = User.get("email").toString() + userId;
+        authMapper.deleteCompanyMember(userId, delAuthId, delEmail);
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("message", "Successful delete member");
+        return resMap;
+    }
+
+    public HashMap<String, Object> updateUserAlarmCheck(String alarmYn, String token) throws Exception {
+        String authId = jwtUtil.extractUsername(token);
+        authMapper.updateUserAlarmCheck(authId, alarmYn);
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("message", "Successful update alarm.");
+        return resMap;
+    }
+
+    public HashMap<String, Object> updateMyInfo(MyInfoUpdateDto myInfoUpdateDto, String token) throws Exception {
+        myInfoUpdateDto.setPhone(myInfoUpdateDto.getPhone().replaceAll("-", ""));
+        if(myInfoUpdateDto.getPassword() != null && !myInfoUpdateDto.getPassword().equals("")) {
+            myInfoUpdateDto.setPassword(
+                    CommonFunc.encodeBCrypt(myInfoUpdateDto.getPassword())
+            );
+        }
+        myInfoUpdateDto.setAuthId(jwtUtil.extractUsername(token));
+        authMapper.updateMyInfo(myInfoUpdateDto);
+        HashMap<String, Object> resMap = new HashMap<>();
+        resMap.put("message", "Successful update profile.");
+        return resMap;
+    }
+
+    public List<HashMap<String, Object>> selectNotification(NoticeSearchDto noticeSearchDto) throws Exception {
+        return authMapper.selectNotification(noticeSearchDto);
+    }
+
+    public List<HashMap<String, Object>> selectFaq() throws Exception {
+        return authMapper.selectFaq();
     }
 }

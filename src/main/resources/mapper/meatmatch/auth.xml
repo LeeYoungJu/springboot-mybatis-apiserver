@@ -6,7 +6,14 @@
     <select id="findUserByAuthId" resultType="hashMap">
         select *
         from users
-        where auth_id=#{authId}
+        where auth_id = #{authId}
+          and deleted_at is null
+    </select>
+
+    <select id="findCompanyById" resultType="hashMap">
+        select *
+        from company
+        where id = #{compId}
           and deleted_at is null
     </select>
 
@@ -72,5 +79,72 @@
         insert into users(auth_id, password, name, email, phone, type, is_approved, company_id, created_at, updated_at)
         values(#{auth_id}, #{password}, #{name}, #{email}, #{phone}, 'master', 'N', #{companyId}, now(), now())
     </insert>
+
+    <select id="getCompanyMembers" resultType="hashMap">
+        select *
+        from users
+        where company_id = #{compId}
+          and type != 'master'
+          and deleted_at is null
+    </select>
+    
+    <insert id="insertCompanyMember" parameterType="kr.co.meatmatch.dto.auth.CompanyMemberInsertDto" useGeneratedKeys="true" keyProperty="id">
+        insert into users(auth_id, company_id, password, name, email, phone, type, is_approved, created_at, updated_at)
+        values(#{auth_id}, #{compId}, #{password}, #{name}, #{email}, #{phone}, 'common', 'Y', now(), now())
+    </insert>
+
+    <select id="checkUpdateEmail" resultType="int">
+        select count(*) cnt
+        from users
+        where email != #{oldEmail}
+          and email = #{newEmail}
+          and deleted_at is null
+    </select>
+
+    <update id="updateCompanyMemberInfo" parameterType="kr.co.meatmatch.dto.auth.CompanyMemberUpdateDto">
+        update users set
+                         name = #{name}
+                         , email = #{email}
+                         , phone = #{phone}
+                         , updated_at = now()
+                    <if test='password != null and !password.equals("")'>
+                         , password = #{password}
+                    </if>
+        where auth_id = #{auth_id}
+    </update>
+
+    <update id="deleteCompanyMember">
+        update users set auth_id = #{authId}, email = #{email}, deleted_at = now()
+        where id = #{userId}
+    </update>
+    
+    <update id="updateUserAlarmCheck">
+        update users set alarm_check = #{alarmYn}, updated_at = now()
+        where auth_id = #{authId}
+    </update>
+
+    <update id="updateMyInfo" parameterType="kr.co.meatmatch.dto.auth.MyInfoUpdateDto">
+        update users set
+                  name = #{name}
+                , email = #{email}
+                , phone = #{phone}
+                , updated_at = now()
+            <if test='password != null and !password.equals("")'>
+                , password = #{password}
+            </if>
+        where auth_id = #{authId}
+    </update>
+
+    <select id="selectNotification" resultType="hashMap">
+        select *
+        from bbs_notice
+        order by created_at desc, id desc
+    </select>
+
+    <select id="selectFaq" resultType="hashMap">
+        select *
+        from bbs_faq
+        order by created_at desc, id desc
+    </select>
 
 </mapper>

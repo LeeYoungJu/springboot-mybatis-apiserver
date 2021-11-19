@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -36,8 +37,8 @@ public class ProductService {
         mySellingProductsSearchDto.setCompId(authService.getCompIdByToken(token));
         List<HashMap<String, Object>> list = productMapper.selectSellingProducts(mySellingProductsSearchDto);
         String[] estNames = {"stock_est_id", "stockEstList"};
-        String[] warehouseNames = {"warehouse_all", "stockWarehouseList"};
-        setEstAndWarehouseList(list, estNames, warehouseNames);
+        String warehouseResName = "stockWarehouseList";
+        setEstAndWarehouseList(list, estNames, warehouseResName);
         return list;
     }
 
@@ -45,29 +46,72 @@ public class ProductService {
         myBuyingProductsSearchDto.setCompId(authService.getCompIdByToken(token));
         List<HashMap<String, Object>> list = productMapper.selectBuyingProducts(myBuyingProductsSearchDto);
         String[] estNames = {"stock_est_id", "stockEstList"};
-        String[] warehouseNames = {"warehouse_all", "stockWarehouseList"};
-        setEstAndWarehouseList(list, estNames, warehouseNames);
+        String warehouseResName = "stockWarehouseList";
+        setEstAndWarehouseList(list, estNames, warehouseResName);
         return list;
     }
 
-    public void setEstAndWarehouseList(List<HashMap<String, Object>> list, String[] estNames, String[] warehouseNames) throws Exception {
+    public void setEstAndWarehouseList(List<HashMap<String, Object>> list, String[] estNames, String warehouseResName) throws Exception {
+        this.setEstList(list, estNames);
+        this.setWarehouseList(list, warehouseResName);
+    }
+
+    public void setEstList(List<HashMap<String, Object>> list, String[] estNames) throws Exception {
         String estColName = estNames[0];
         String estResName = estNames[1];
-        String warehouseColName = warehouseNames[0];
-        String warehouseResName = warehouseNames[1];
+
+        String stockEstIds = "";
         for(HashMap<String, Object> Product : list) {
-            List<HashMap<String, Object>> estList = productMapper.selectEstList(Product.get(estColName).toString());
+            stockEstIds += "," + Product.get(estColName).toString();
+        }
+        stockEstIds = stockEstIds.substring(1);
+
+        List<HashMap<String, Object>> eList = productMapper.selectEstList(stockEstIds);
+        HashMap<String, List<HashMap<String, Object>>> eMap = new HashMap<>();
+        for(HashMap<String, Object> est : eList) {
+            HashMap<String, Object> ew = new HashMap<>();
+            ew.put("id", Integer.parseInt(est.get("id").toString()));
+            ew.put("est_no", est.get("est_no").toString());
+            String estId = est.get("id").toString();
+
+            List<HashMap<String, Object>> tempList = new ArrayList<>();
+            tempList.add(ew);
+            eMap.put(estId, tempList);
+        }
+
+        for(HashMap<String, Object> Product : list) {
+            String stockEstId = Product.get(estColName).toString();
+            List<HashMap<String, Object>> estList = eMap.get(stockEstId);
             Product.put(estResName, estList);
-            List<HashMap<String, Object>> warehouseList = productMapper.selectWarehouseList(Product.get(warehouseColName).toString());
-            Product.put(warehouseResName, warehouseList);
         }
     }
 
-    public void setWarehouseList(List<HashMap<String, Object>> list, String[] warehouseNames) throws Exception {
-        String warehouseColName = warehouseNames[0];
-        String warehouseResName = warehouseNames[1];
+    public void setWarehouseList(List<HashMap<String, Object>> list, String warehouseResName) throws Exception {
+        String bookIds = "";
         for(HashMap<String, Object> Product : list) {
-            List<HashMap<String, Object>> warehouseList = productMapper.selectWarehouseList(Product.get(warehouseColName).toString());
+            bookIds += "," + Product.get("id").toString();
+        }
+        bookIds = bookIds.substring(1);
+
+        List<HashMap<String, Object>> wList = productMapper.selectOrdersWarehouseByBookIds(bookIds);
+        HashMap<String, List<HashMap<String, Object>>> wMap = new HashMap<>();
+        for(HashMap<String, Object> warehouse : wList) {
+            HashMap<String, Object> ow = new HashMap<>();
+            ow.put("id", Integer.parseInt(warehouse.get("id").toString()));
+            ow.put("name", warehouse.get("name").toString());
+            ow.put("first_address", warehouse.get("first_address").toString());
+            String bookId = warehouse.get("orders_book_id").toString();
+            if(wMap.get(bookId) == null) {
+                List<HashMap<String, Object>> tempList = new ArrayList<>();
+                tempList.add(ow);
+                wMap.put(bookId, tempList);
+            } else {
+                wMap.get(bookId).add(ow);
+            }
+        }
+        for(HashMap<String, Object> Product : list) {
+            String bookId = Product.get("id").toString();
+            List<HashMap<String, Object>> warehouseList = wMap.get(bookId);
             Product.put(warehouseResName, warehouseList);
         }
     }

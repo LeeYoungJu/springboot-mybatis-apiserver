@@ -8,4 +8,7 @@ import lombok.Setter;
 @Setter
 public class MyReadyProductSearchDto extends BasicPageDto {
     protected int compId;
+
+    protected int stock_product_id;
+    protected String stock_warehouse_id;
 }

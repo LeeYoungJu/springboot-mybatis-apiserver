@@ -115,6 +115,13 @@
         from stock_warehouse
         where id in (${ids})
     </select>
+
+    <select id="selectOrdersWarehouseByBookIds" resultType="hashMap">
+        select ow.orders_book_id, sw.id, sw.name, sw.first_address
+        from orders_warehouse ow
+            join stock_warehouse sw on ow.stock_warehouse_id = sw.id
+        where ow.orders_book_id in (${bookIds})
+    </select>
     
     <select id="selectBuyingProducts" resultType="hashMap">
          select orders_book.id, orders_book.type, orders_book.stock_product_id, orders_book.status

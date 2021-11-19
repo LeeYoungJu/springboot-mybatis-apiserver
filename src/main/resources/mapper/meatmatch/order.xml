@@ -127,7 +127,7 @@
         <if test='status != null and !status.equals("")'>
             and orders_book.status = #{status}
         </if>
-        <if test='orders_book_id != null and orders_book_id > 0'>
+        <if test='orders_book_id != null and !orders_book_id.equals("")'>
             and orders_book.id = #{orders_book_id}
         </if>
         order by orders_book.id desc
@@ -151,7 +151,7 @@
         <if test='status != null and !status.equals("")'>
             and orders_bid.status = #{status}
         </if>
-        <if test='orders_book_id != null and orders_book_id > 0'>
+        <if test='orders_book_id != null and !orders_book_id.equals("")'>
             and orders_bid.orders_book_id = #{orders_book_id}
         </if>
         order by orders_bid.id desc

@@ -14,6 +14,7 @@ import java.util.Base64.Encoder;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 @Component
 public class CommonFunc {
@@ -97,5 +98,27 @@ public class CommonFunc {
             compare = "<=";
         }
         return compare;
+    }
+
+    public static String setEmptyFormat(String originStr, String replaceStr, int len) {
+        String result = "";
+        for(int i=0; i < len - originStr.length(); i++) {
+            result += replaceStr;
+        }
+        return result + originStr;
+    }
+
+    public static boolean checkAuthId(String authId) {
+        return Pattern.matches("^((?=.*[a-zA-Z])[a-zA-Z0-9])[A-Za-z\\d]{5,17}$", authId);
+    }
+
+    public static boolean checkPassword(String password) {
+        return Pattern.matches("/^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d!@#$%^&*]{8,20}$/", password);
+    }
+
+    public static boolean checkPhone(String phone) {
+        System.out.println(phone);
+//        return Pattern.matches("/^01([0|1|6|7|8|9])-?([0-9]{3,4})-?([0-9]{4})$/", phone);
+        return Pattern.matches("/\\d{3}-\\d{4}-\\d{4}/", phone);
     }
 }
