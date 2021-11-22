@@ -26,7 +26,6 @@ public class SmsService {
     }
 
     public int sendToAdmin(String msg) throws Exception {
-        System.out.println("admin num : " + adminPhNum);
         return this.sendSmsMsg(adminPhNum, msg, SMS.TEMPLATE_ADMIN_USER);
     }
 

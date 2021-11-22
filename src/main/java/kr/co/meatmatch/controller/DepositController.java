@@ -63,14 +63,11 @@ public class DepositController {
     public ResponseEntity<ResponseDto> getDepositDetail(@RequestHeader(name = "Authorization") String token
                                                         , @ModelAttribute DepositHistorySearchDto requestDto) throws Exception {
         HashMap<String, Object> resMap = depositService.getDepositDetail(CommonFunc.removeBearerFromToken(token));
-        System.out.println(requestDto.getType());
-        System.out.println(requestDto.getDate());
 
         if(requestDto.getDate() != null && !requestDto.getDate().equals("") && !requestDto.getDate().equals("all")) {
             String[] dateArr = CommonFunc.splitDate(requestDto.getDate(), "\\^");
             requestDto.setSDate(dateArr[0]);
             requestDto.setEDate(dateArr[1]);
-            System.out.println(requestDto.toString());
         }
         PagingUtil.init(requestDto, PAGE_SIZE);
         List<HashMap<String, Object>> list = depositService.selectDepositHistory(requestDto, CommonFunc.removeBearerFromToken(token));

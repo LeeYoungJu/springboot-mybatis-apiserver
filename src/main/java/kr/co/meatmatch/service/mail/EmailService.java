@@ -63,9 +63,5 @@ public class EmailService {
         helper.setText(html, true);
 
         emailSender.send(message);
-
-        for(String admin : ADMINS) {
-            System.out.println(admin);
-        }
     }
 }

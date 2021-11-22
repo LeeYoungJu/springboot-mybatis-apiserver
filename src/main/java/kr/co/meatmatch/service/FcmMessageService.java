@@ -19,7 +19,6 @@ public class FcmMessageService {
     private final ObjectMapper objectMapper;
 
     public void sendMessageTo(String targetToken, String title, String body) throws Exception {
-        System.out.println("=============PUSH=============");
         String message = makeMessage(targetToken, title, body);
 
         OkHttpClient client = new OkHttpClient();
@@ -35,9 +34,6 @@ public class FcmMessageService {
                 .build();
 
         Response response = client.newCall(request).execute();
-
-        System.out.println("finish push");
-        System.out.println(response.body().string());
     }
 
     public void sendMessageTo(List<String> tokens, String title, String body) throws Exception {

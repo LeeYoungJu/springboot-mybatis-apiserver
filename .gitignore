@@ -3,6 +3,7 @@
 build
 logs
 src/.DS_Store
+.DS_Store
 src/main/.DS_Store
 src/resources/application.yml
 META-INF
